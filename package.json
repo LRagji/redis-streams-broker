@@ -4,8 +4,10 @@
   "description": "This package is a broker to redis stream data type, This package provides guaranteed message delivery feature with acknowledgement.",
   "main": "index.js",
   "scripts": {
-    "test": "test",
-    "redis": "docker run -p 6379:6379 -it --rm redis:latest"
+    "mocha":"./node_modules/mocha/bin/mocha",
+    "test":"npm run redisstart && npm run mocha && npm run redisstop",
+    "redisstop":"docker ps -q --filter name=streamz | xargs docker stop",
+    "redisstart": "npm run redisstop && docker run --name streamz -p 6379:6379 -itd --rm redis:latest"
   },
   "repository": {
     "type": "git",
@@ -28,5 +30,8 @@
   "homepage": "https://github.com/LRagji/redis-streams-broker#readme",
   "dependencies": {
     "ioredis": "^4.16.2"
+  },
+  "devDependencies": {
+    "mocha": "^7.1.1"
   }
 }
