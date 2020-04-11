@@ -97,7 +97,7 @@ module.exports = class StreamChannelBroker {
             case "object":
                 for (const [key, value] of Object.entries(payload)) {
                     keyValuePairs.push(key);
-                    keyValuePairs.push(JSON.stringify(value) || value);
+                    keyValuePairs.push(value);
                 }
                 break;
             default:
