@@ -13,7 +13,7 @@ module.exports = class StreamChannelBroker {
         this.joinConsumerGroup = this._destroyingCheckWrapper(this.joinConsumerGroup.bind(this));
         this.destroy = this._destroyingCheckWrapper(this.destroy.bind(this));
         this._transformResponseToMessage = this._transformResponseToMessage.bind(this);
-        this.acknowledgeMessage = this._destroyingCheckWrapper(this.acknowledgeMessage.bind(this));
+        this._acknowledgeMessage = this._destroyingCheckWrapper(this._acknowledgeMessage.bind(this));
         this._unsubscribe = this._destroyingCheckWrapper(this._unsubscribe.bind(this), false);
     }
 
@@ -41,7 +41,7 @@ module.exports = class StreamChannelBroker {
         const intervalHandle = setInterval(async () => {
             const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "COUNT", payloadsToFetch, "STREAMS", this._channelName, ">");
             if (messages !== null) {
-                let streamPayloads = this._transformResponseToMessage(messages, consumerName);
+                let streamPayloads = this._transformResponseToMessage(messages, groupName);
                 await handler(streamPayloads);
             }
         }, pollSpan);
@@ -61,18 +61,18 @@ module.exports = class StreamChannelBroker {
         }
     }
 
-    async acknowledgeMessage(consumerGroup, messageId) {
-        let result = await this._redisClient.xack(this._channelName, consumerGroup, messageId);
+    async _acknowledgeMessage(groupName, messageId) {
+        let result = await this._redisClient.xack(this._channelName, groupName, messageId);
         return result === 1;
     }
 
-    _transformResponseToMessage(responses, consumerName) {
+    _transformResponseToMessage(responses, groupName) {
         let payloads = [];
         for (let responseIdx = 0; responseIdx < responses.length; responseIdx++) {
             let streamName = responses[responseIdx][0];
             for (let messageIdIdx = 0; messageIdIdx < responses[responseIdx][1].length; messageIdIdx++) {
                 let messageId = responses[responseIdx][1][messageIdIdx][0];
-                let payload = { "channel": streamName, "id": messageId, "markAsRead": () => this.acknowledgeMessage(consumerName, messageId), payload: {} };
+                let payload = { "channel": streamName, "id": messageId, "markAsRead": async () => await this._acknowledgeMessage(groupName, messageId), payload: {} };
                 for (let propertyIdx = 0; propertyIdx < responses[responseIdx][1][messageIdIdx][1].length;) {
                     payload.payload[responses[responseIdx][1][messageIdIdx][1][propertyIdx]] = responses[responseIdx][1][messageIdIdx][1][propertyIdx + 1];
                     propertyIdx += 2;

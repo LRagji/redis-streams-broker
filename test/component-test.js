@@ -18,7 +18,7 @@ describe('RedisStreamsBroker Component Tests', function () {
         await target._redisClient.flushall();
     });
 
-    it('Should be able to publish and subscribe to a channel.', async function () {
+    it('Should be able to publish, subscribe and acknowledge messages on a channel.', async function () {
 
         let actualTrap = [];
         let expected = {
@@ -42,10 +42,15 @@ describe('RedisStreamsBroker Component Tests', function () {
         assert.deepEqual(actualTrap[0][0].channel, channelName, "Channel name cannot be different.");
         assert.deepEqual(actualTrap[0][0].payload, expected, "Payload is different than what was send.");
 
+        //Acknowledge Message
+        const ackResult = await actualTrap[0][0].markAsRead();
+        assert.deepEqual(ackResult, true, "Failed to acknowledge message.");
+
+        //Unsubscribe
         const result = consumerGroup.unsubscribe(subscription);
         assert.deepEqual(result, true, "Failed to unsubscribe.");
 
-    }).timeout(maxtimeout * 2);
+    }).timeout(-1)//maxtimeout * 2);
 
     it('Should broadcast payloads to all groups.', async function () {
 
