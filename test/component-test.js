@@ -22,10 +22,7 @@ describe('RedisStreamsBroker Component Tests', function () {
 
         let actualTrap = [];
         let expected = {
-            string: "hello",
-            number: 1,
-            float: 1.5,
-            bool: true
+            string: "hello world!"
         };
 
         //RUN

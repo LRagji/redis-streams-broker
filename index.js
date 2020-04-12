@@ -96,7 +96,7 @@ module.exports = class StreamChannelBroker {
         switch (payloadType) {
             case "object":
                 for (const [key, value] of Object.entries(payload)) {
-                    if ((value !== null && value !== undefined) && (Number.isInteger(value) || typeof value === "string" || value instanceof String || value === true || value === false || parseFloat(value).toString() === value.toString())) {
+                    if ((value !== null && value !== undefined) && (typeof value === "string" || value instanceof String)) {
                         keyValuePairs.push(key);
                         keyValuePairs.push(value);
                     }
