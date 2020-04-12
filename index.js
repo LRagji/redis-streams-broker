@@ -15,6 +15,7 @@ module.exports = class StreamChannelBroker {
         this._transformResponseToMessage = this._transformResponseToMessage.bind(this);
         this._acknowledgeMessage = this._destroyingCheckWrapper(this._acknowledgeMessage.bind(this));
         this._unsubscribe = this._destroyingCheckWrapper(this._unsubscribe.bind(this), false);
+        this._groupPendingSummary = this._destroyingCheckWrapper(this._groupPendingSummary.bind(this), false);
     }
 
     _destroyingCheckWrapper(fn, async = true) {
@@ -83,6 +84,16 @@ module.exports = class StreamChannelBroker {
         return payloads;
     }
 
+    async _groupPendingSummary(groupName) {
+        let result = await this._redisClient.xpending(this._channelName, groupName);
+        let summary = { "total": result[0], "firstId": result[1], "lastId": result[2], "consumerStats": {} };
+        summary.consumerStats = result[3] === null ? {} : result[3].reduce((acc, e) => {
+            acc[e[0]] = e[1];
+            return acc;
+        }, {});
+        return summary;
+    }
+
     async joinConsumerGroup(groupName, readFrom = '$') {
         const keyExists = await this._redisClient.exists(this._channelName);
         if (keyExists === 1) {
@@ -98,8 +109,9 @@ module.exports = class StreamChannelBroker {
         return {
             "name": groupName,
             "readFrom": readFrom,
-            "subscribe": (...theArgs) => this._subscribe(groupName, ...theArgs),
-            "unsubscribe": this._unsubscribe
+            "subscribe": async (...theArgs) => await this._subscribe(groupName, ...theArgs),
+            "unsubscribe": this._unsubscribe,
+            "pendingSummary": async () => await this._groupPendingSummary(groupName)
         }
     }
 

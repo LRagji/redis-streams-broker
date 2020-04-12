@@ -21,6 +21,7 @@ describe('RedisStreamsBroker Component Tests', function () {
     it('Should be able to publish, subscribe and acknowledge messages on a channel.', async function () {
 
         let actualTrap = [];
+        const consumerName = "Consumer1";
         let expected = {
             string: "hello world!"
         };
@@ -28,7 +29,7 @@ describe('RedisStreamsBroker Component Tests', function () {
         //RUN
         let consumerGroup = await target.joinConsumerGroup("MyGroup");
         assert.notDeepEqual(consumerGroup, undefined, "Consumer group cannot be null.");
-        const subscription = await consumerGroup.subscribe("Consumer1", (payload) => actualTrap.push(payload));
+        const subscription = await consumerGroup.subscribe(consumerName, (payload) => actualTrap.push(payload));
         const payloadId = await target.publish(expected);
 
         await utils.KillTime(maxtimeout);
@@ -42,15 +43,25 @@ describe('RedisStreamsBroker Component Tests', function () {
         assert.deepEqual(actualTrap[0][0].channel, channelName, "Channel name cannot be different.");
         assert.deepEqual(actualTrap[0][0].payload, expected, "Payload is different than what was send.");
 
+        //Validate Pending
+        let summary = await consumerGroup.pendingSummary();
+        assert.deepEqual(summary.total, 1, "Only one message should be pending.");
+        assert.deepEqual(summary.consumerStats[consumerName], 1, "Only one message should be pending for Consumer1.");
+
         //Acknowledge Message
         const ackResult = await actualTrap[0][0].markAsRead();
         assert.deepEqual(ackResult, true, "Failed to acknowledge message.");
+
+        //Re-Validate Pending
+        summary = await consumerGroup.pendingSummary();
+        assert.deepEqual(summary.total, 0, "No messages should be pending.");
+        assert.deepEqual(summary.consumerStats, {}, "Consumer stats should be empty.");
 
         //Unsubscribe
         const result = consumerGroup.unsubscribe(subscription);
         assert.deepEqual(result, true, "Failed to unsubscribe.");
 
-    }).timeout(-1)//maxtimeout * 2);
+    }).timeout(maxtimeout * 2);
 
     it('Should broadcast payloads to all groups.', async function () {
 
