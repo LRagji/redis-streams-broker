@@ -19,7 +19,6 @@ describe('RedisStreamsBroker Component Tests', function () {
     });
 
     it('Should be able to publish and subscribe to a channel.', async function () {
-        //const target = new targetType(localRedisConnectionString, channelName);
 
         let actualTrap = [];
         let expected = {
@@ -93,4 +92,107 @@ describe('RedisStreamsBroker Component Tests', function () {
 
     }).timeout(maxtimeout * 2);
 
+    it('Should send payload to only one consumer in single group.', async function () {
+
+        let actualTrapConsumer1 = [];
+        let actualTrapConsumer2 = [];
+        let expected = {
+            string: "hello world!"
+        };
+
+        //RUN
+        let consumerGroup = await target.joinConsumerGroup("MyGroup");
+        assert.notDeepEqual(consumerGroup, undefined, "Consumer group cannot be null.");
+        const subscription1 = await consumerGroup.subscribe("Consumer1", (payload) => actualTrapConsumer1.push(payload));
+        const subscription2 = await consumerGroup.subscribe("Consumer2", (payload) => actualTrapConsumer2.push(payload));
+        const payloadId = await target.publish(expected);
+
+        await utils.KillTime(maxtimeout);
+
+        //VERIFY
+        assert.notDeepEqual(subscription1, undefined, "Incorrect subscription handle, for consumer 1");
+        assert.notDeepEqual(subscription2, undefined, "Incorrect subscription handle, for consumer 2");
+        assert.deepEqual(actualTrapConsumer1.length + actualTrapConsumer2.length, 1, "Only one payload should be present for only one consumer");
+        const actual = actualTrapConsumer1.length > 0 ? actualTrapConsumer1[0] : actualTrapConsumer2[0];
+        assert.deepEqual(actual.length, 1, "Only one sample should be present.");
+        assert.deepEqual(actual.length, 1, "Only one payload should be present");
+        assert.deepEqual(actual[0].id, payloadId, "Payload id cannot be different.");
+        assert.deepEqual(actual[0].channel, channelName, "Channel name cannot be different.");
+        assert.deepEqual(actual[0].payload, expected, "Payload is different than what was send.");
+
+        const consumer1Sub = consumerGroup.unsubscribe(subscription1);
+        assert.deepEqual(consumer1Sub, true, "Failed to unsubscribe, for consumer 1");
+        const consumer2Sub = consumerGroup.unsubscribe(subscription2);
+        assert.deepEqual(consumer2Sub, true, "Failed to unsubscribe, for consumer 2");
+
+    }).timeout(maxtimeout * 2);
+
+    it('Should send only 2 payloads per consumer in single group, when multiple published messages are available.', async function () {
+
+        let actualTrapConsumer1 = [];
+        let actualTrapConsumer2 = [];
+        let expected1 = {
+            string: "hello world!",
+            id: "1"
+        };
+        let expected2 = {
+            string: "hello world!",
+            id: "2"
+        };
+        let expected3 = {
+            string: "hello world!",
+            id: "3"
+        };
+        let expected4 = {
+            string: "hello world!",
+            id: "4"
+        };
+
+        //RUN
+        let consumerGroup = await target.joinConsumerGroup("MyGroup");
+        assert.notDeepEqual(consumerGroup, undefined, "Consumer group cannot be null.");
+        const subscription1 = await consumerGroup.subscribe("Consumer1", (payload) => actualTrapConsumer1.push(payload));
+        const subscription2 = await consumerGroup.subscribe("Consumer2", (payload) => actualTrapConsumer2.push(payload));
+        const publishMap = new Map();
+        publishMap.set(await target.publish(expected1), expected1);
+        publishMap.set(await target.publish(expected2), expected2);
+        publishMap.set(await target.publish(expected3), expected3);
+        publishMap.set(await target.publish(expected4), expected4);
+
+        await utils.KillTime(maxtimeout);
+
+        //VERIFY
+        assert.notDeepEqual(subscription1, undefined, "Incorrect subscription handle, for consumer 1");
+        assert.notDeepEqual(subscription2, undefined, "Incorrect subscription handle, for consumer 2");
+        assert.deepEqual(actualTrapConsumer1.length, 1, "Only one payload should be present for consumer1");
+        assert.deepEqual(actualTrapConsumer2.length, 1, "Only one payload should be present for consumer2");
+        assert.deepEqual(actualTrapConsumer1[0].length, 2, "Only 2 samples should be present for consumer 1");
+        assert.deepEqual(actualTrapConsumer2[0].length, 2, "Only 2 samples should be present for consumer 2");
+
+        let expected = publishMap.get(actualTrapConsumer1[0][0].id);
+        assert.notDeepEqual(expected, undefined, "Expected cannot be null for consumer 1 sample 1.");
+        assert.deepEqual(actualTrapConsumer1[0][0].channel, channelName, "Channel name cannot be different for consumer 1 sample 1.");
+        assert.deepEqual(actualTrapConsumer1[0][0].payload, expected, "Payload is different than what was sent for consumer 1 sample 1.");
+
+        expected = publishMap.get(actualTrapConsumer1[0][1].id);
+        assert.notDeepEqual(expected, undefined, "Expected cannot be null for consumer 1 sample 2.");
+        assert.deepEqual(actualTrapConsumer1[0][1].channel, channelName, "Channel name cannot be different for consumer 1 sample 2.");
+        assert.deepEqual(actualTrapConsumer1[0][1].payload, expected, "Payload is different than what was sent for consumer 1 sample 2.");
+
+        expected = publishMap.get(actualTrapConsumer2[0][0].id);
+        assert.notDeepEqual(expected, undefined, "Expected cannot be null for consumer 2 sample 1.");
+        assert.deepEqual(actualTrapConsumer2[0][0].channel, channelName, "Channel name cannot be different for consumer 2 sample 1.");
+        assert.deepEqual(actualTrapConsumer2[0][0].payload, expected, "Payload is different than what was sent for consumer 2 sample 1.");
+
+        expected = publishMap.get(actualTrapConsumer2[0][1].id);
+        assert.notDeepEqual(expected, undefined, "Expected cannot be null for consumer 1 sample 2.");
+        assert.deepEqual(actualTrapConsumer2[0][1].channel, channelName, "Channel name cannot be different for consumer 2 sample 2.");
+        assert.deepEqual(actualTrapConsumer2[0][1].payload, expected, "Payload is different than what was sent for consumer 2 sample 2.");
+
+        const consumer1Sub = consumerGroup.unsubscribe(subscription1);
+        assert.deepEqual(consumer1Sub, true, "Failed to unsubscribe, for consumer 1");
+        const consumer2Sub = consumerGroup.unsubscribe(subscription2);
+        assert.deepEqual(consumer2Sub, true, "Failed to unsubscribe, for consumer 2");
+
+    }).timeout(maxtimeout * 2);
 })
