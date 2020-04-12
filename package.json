@@ -6,8 +6,8 @@
   "scripts": {
     "mocha":"./node_modules/mocha/bin/mocha",
     "test":"npm run redisstart && npm run mocha && npm run redisstop",
-    "redisstop":"docker ps -q --filter name=streamz | xargs docker stop",
-    "redisstart": "npm run redisstop && docker run --name streamz -p 6379:6379 -itd --rm redis:latest"
+    "redisstop":"docker stop streamz",
+    "redisstart": "npm run redisstop || true && docker run --name streamz -p 6379:6379 -itd --rm redis:latest"
   },
   "repository": {
     "type": "git",
