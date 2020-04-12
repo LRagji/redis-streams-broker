@@ -14,6 +14,7 @@ module.exports = class StreamChannelBroker {
         this.destroy = this._destroyingCheckWrapper(this.destroy.bind(this));
         this._transformResponseToMessage = this._transformResponseToMessage.bind(this);
         this.acknowledgeMessage = this._destroyingCheckWrapper(this.acknowledgeMessage.bind(this));
+        this._unsubscribe = this._destroyingCheckWrapper(this._unsubscribe.bind(this), false);
     }
 
     _destroyingCheckWrapper(fn, async = true) {
@@ -45,7 +46,19 @@ module.exports = class StreamChannelBroker {
             }
         }, pollSpan);
         this._activeSubscriptions.push(intervalHandle);
-        return true;
+        return intervalHandle;
+    }
+
+    _unsubscribe(subscriptionHandle) {
+        let handleIdx = this._activeSubscriptions.indexOf(subscriptionHandle);
+        if (handleIdx >= 0) {
+            clearInterval(subscriptionHandle);
+            this._activeSubscriptions.splice(handleIdx, 1);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     async acknowledgeMessage(consumerGroup, messageId) {
@@ -85,10 +98,10 @@ module.exports = class StreamChannelBroker {
         return {
             "name": groupName,
             "readFrom": readFrom,
-            "subscribe": (...theArgs) => this._subscribe(groupName, ...theArgs)
+            "subscribe": (...theArgs) => this._subscribe(groupName, ...theArgs),
+            "unsubscribe": this._unsubscribe
         }
     }
-
 
     async publish(payload, maximumApproximateMessages = 100) {
         let keyValuePairs = [];
@@ -118,7 +131,7 @@ module.exports = class StreamChannelBroker {
 
     async destroy() {
         this._destroying = true;
-        this._activeSubscriptions.forEach(interval => clearInterval(interval));
+        this._activeSubscriptions.reduce(((pre, handle) => this._unsubscribe(handle) & pre), true);
         await this._redisClient.quit();
         await this._redisClient.disconnect();
     }
