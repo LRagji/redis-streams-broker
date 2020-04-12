@@ -96,8 +96,13 @@ module.exports = class StreamChannelBroker {
         switch (payloadType) {
             case "object":
                 for (const [key, value] of Object.entries(payload)) {
-                    keyValuePairs.push(key);
-                    keyValuePairs.push(value);
+                    if ((value !== null && value !== undefined) && (Number.isInteger(value) || typeof value === "string" || value instanceof String || value === true || value === false || parseFloat(value).toString() === value.toString())) {
+                        keyValuePairs.push(key);
+                        keyValuePairs.push(value);
+                    }
+                    else {
+                        throw new Error(`Data type of property ${key} is not supported.`);
+                    }
                 }
                 break;
             default:

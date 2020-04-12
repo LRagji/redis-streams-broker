@@ -21,7 +21,12 @@ describe('RedisStreamsBroker Component Tests', function () {
     it('Should be able to publish and subscribe to a channel.', async function () {
 
         let actualTrap = [];
-        let expected = { a: "hello", b: "world" };
+        let expected = {
+            string: "hello",
+            number: 1,
+            float: 1.5,
+            bool: true
+        };
 
         //RUN
         let consumerGroup = await target.joinConsumerGroup("MyGroup");
