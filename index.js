@@ -46,9 +46,9 @@ module.exports = class StreamChannelBroker {
                 await this._unsubscribe(subscriptionHandle);
                 let streamPayloads = this._transformResponseToMessage(messages, groupName);
                 await handler(streamPayloads);
-                if (this._destroying === false) {
-                    await this._subscribe(groupName, consumerName, handler, pollSpan, payloadsToFetch, subscriptionHandle);
-                }
+            }
+            if (this._destroying === false) {
+                await this._subscribe(groupName, consumerName, handler, pollSpan, payloadsToFetch, subscriptionHandle);
             }
         }, pollSpan);
         let subscriptions = this._activeSubscriptions.get(subscriptionHandle) || [];
