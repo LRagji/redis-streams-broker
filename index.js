@@ -1,7 +1,7 @@
 const redisType = require("ioredis");
 const shortid = require("shortid");
 
-module.exports = class StreamChannelBroker {
+class StreamChannelBroker {
 
     constructor(redisConnectionString, channelName) {
         this._redisClient = new redisType(redisConnectionString);
@@ -156,3 +156,5 @@ module.exports = class StreamChannelBroker {
     }
 
 }
+
+exports.StreamChannelBroker = StreamChannelBroker;
