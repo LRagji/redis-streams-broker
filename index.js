@@ -1,4 +1,5 @@
 const redisType = require("ioredis");
+const shortid = require("shortid");
 
 module.exports = class StreamChannelBroker {
 
@@ -6,7 +7,7 @@ module.exports = class StreamChannelBroker {
         this._redisClient = new redisType(redisConnectionString);
         this._destroying = false;
         this._channelName = channelName;
-        this._activeSubscriptions = [];
+        this._activeSubscriptions = new Map();
         this._destroyingCheckWrapper = this._destroyingCheckWrapper.bind(this);
         this.publish = this._destroyingCheckWrapper(this.publish.bind(this));
         this._subscribe = this._destroyingCheckWrapper(this._subscribe.bind(this));
@@ -38,23 +39,28 @@ module.exports = class StreamChannelBroker {
         }
     }
 
-    async _subscribe(groupName, consumerName, handler, pollSpan = 1000, payloadsToFetch = 2) {
-        const intervalHandle = setInterval(async () => {
+    async _subscribe(groupName, consumerName, handler, pollSpan = 1000, payloadsToFetch = 2, subscriptionHandle = shortid.generate()) {
+        const intervalHandle = setTimeout(async () => {
             const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "COUNT", payloadsToFetch, "STREAMS", this._channelName, ">");
             if (messages !== null) {
+                await this._unsubscribe(subscriptionHandle);
                 let streamPayloads = this._transformResponseToMessage(messages, groupName);
                 await handler(streamPayloads);
+                if (this._destroying === false) {
+                    await this._subscribe(groupName, consumerName, handler, pollSpan, payloadsToFetch, subscriptionHandle);
+                }
             }
         }, pollSpan);
-        this._activeSubscriptions.push(intervalHandle);
-        return intervalHandle;
+        let subscriptions = this._activeSubscriptions.get(subscriptionHandle) || [];
+        subscriptions.push(intervalHandle);
+        this._activeSubscriptions.set(subscriptionHandle, subscriptions);
+        return subscriptionHandle;
     }
 
     _unsubscribe(subscriptionHandle) {
-        let handleIdx = this._activeSubscriptions.indexOf(subscriptionHandle);
-        if (handleIdx >= 0) {
-            clearInterval(subscriptionHandle);
-            this._activeSubscriptions.splice(handleIdx, 1);
+        if (this._activeSubscriptions.has(subscriptionHandle)) {
+            this._activeSubscriptions.get(subscriptionHandle).map(interval => clearInterval(interval));
+            this._activeSubscriptions.delete(subscriptionHandle);
             return true;
         }
         else {
@@ -143,9 +149,10 @@ module.exports = class StreamChannelBroker {
 
     async destroy() {
         this._destroying = true;
-        this._activeSubscriptions.reduce(((pre, handle) => this._unsubscribe(handle) & pre), true);
+        let result = Array.from(this._activeSubscriptions.keys).reduce(((pre, handle) => this._unsubscribe(handle) & pre), true);
         await this._redisClient.quit();
         await this._redisClient.disconnect();
+        return result;
     }
 
 }
