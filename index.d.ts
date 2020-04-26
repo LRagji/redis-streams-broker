@@ -3,7 +3,7 @@ export declare class StreamChannelBroker {
     publish(payload: any, maximumApproximateMessages?: number): Promise<string>;
     destroy(): Promise<boolean>;
     joinConsumerGroup(groupName: string, readFrom: string): Promise<ConsumerGroup>;
-};
+}
 
 declare class ConsumerGroup {
     name: string;
@@ -11,7 +11,7 @@ declare class ConsumerGroup {
     subscribe(consumerName: string, handler: (payload: Payload[]) => Promise<boolean>, pollSpan?: number, payloadsToFetch?: number, subscriptionHandle?: string): Promise<string>;
     unsubscribe(subscriptionHandle: string): Promise<string>;
     pendingSummary(): Promise<GroupSummary>;
-};
+}
 
 declare class Payload {
     channel: string;
