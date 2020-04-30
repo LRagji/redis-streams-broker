@@ -3,6 +3,7 @@ export declare class StreamChannelBroker {
     publish(payload: any, maximumApproximateMessages?: number): Promise<string>;
     destroy(): Promise<boolean>;
     joinConsumerGroup(groupName: string, readFrom: string): Promise<ConsumerGroup>;
+    memoryFootprint():Promise<integer>;
 }
 
 declare class ConsumerGroup {

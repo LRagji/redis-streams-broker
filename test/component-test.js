@@ -61,6 +61,10 @@ describe('RedisStreamsBroker Component Tests', function () {
         const result = consumerGroup.unsubscribe(subscription);
         assert.deepEqual(result, true, "Failed to unsubscribe.");
 
+        //Check Memory Usage
+        let memoryFinal = await target.memoryFootprint();
+        assert.deepEqual(memoryFinal > 0, true, "Memory cannot be zero");
+
     }).timeout(maxtimeout * 2);
 
     it('Should broadcast payloads to all groups.', async function () {

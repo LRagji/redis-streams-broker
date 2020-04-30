@@ -12,6 +12,7 @@ class StreamChannelBroker {
         this.publish = this._destroyingCheckWrapper(this.publish.bind(this));
         this._subscribe = this._destroyingCheckWrapper(this._subscribe.bind(this));
         this.joinConsumerGroup = this._destroyingCheckWrapper(this.joinConsumerGroup.bind(this));
+        this.memoryFootprint = this._destroyingCheckWrapper(this.memoryFootprint.bind(this));
         this.destroy = this._destroyingCheckWrapper(this.destroy.bind(this));
         this._transformResponseToMessage = this._transformResponseToMessage.bind(this);
         this._acknowledgeMessage = this._destroyingCheckWrapper(this._acknowledgeMessage.bind(this));
@@ -145,6 +146,10 @@ class StreamChannelBroker {
         }
 
         return await this._redisClient.xadd(this._channelName, 'MAXLEN', '~', maximumApproximateMessages, '*', ...keyValuePairs);
+    }
+
+    async memoryFootprint() {
+        return await this._redisClient.memory("usage", this._channelName,"samples",0);
     }
 
     async destroy() {
