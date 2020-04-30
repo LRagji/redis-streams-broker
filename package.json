@@ -23,7 +23,7 @@
     "laukik"
   ],
   "author": "Laukik",
-  "license": "SEE LICENSE IN <license.md>",
+  "license": "SEE LICENSE IN license.md",
   "bugs": {
     "url": "https://github.com/LRagji/redis-streams-broker/issues"
   },

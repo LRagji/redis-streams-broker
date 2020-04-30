@@ -1,7 +1,7 @@
 # redis-streams-broker
 
 This simple package is based on redis streams data type which provides you with following features 
-1. Centeralized Que. (Using Redis)
+1. Centralized Que. (Using Redis)
 2. Guarantee of message delivery via consumer acknowledgements.
 3. Consumer Group functionality for scalability. (Just like Kafka)
 
@@ -21,12 +21,16 @@ const qName = "Queue";
 const brokerType = require('redis-streams-broker').StreamChannelBroker;
 const broker = new brokerType(redisConnectionString, qName);
 
-const payloadId = await broker.publish({ a: "Hello", b: "World" }); //Used to publish a paylod on stream.
+//Used to publish a paylod on stream.
+const payloadId = await broker.publish({ a: "Hello", b: "World" }); 
 
-const consumerGroup = await broker.joinConsumerGroup("MyGroup"); //Creates a consumer group to receive payload
+//Creates a consumer group to receive payload
+const consumerGroup = await broker.joinConsumerGroup("MyGroup"); 
 
-const subscriptionHandle = await consumerGroup.subscribe("Consumer1", newMessageHandler); //Registers a new consumer with Name and Callback for message handlling.
+//Registers a new consumer with Name and Callback for message handlling.
+const subscriptionHandle = await consumerGroup.subscribe("Consumer1", newMessageHandler); 
 
+// Handler for arriving Payload
 async function newMessageHandler(payload) {
     console.log("Payload Id:", payload.id); //Payload Id
     console.log("Payload Received from :", payload.channel); //Stream name
@@ -34,11 +38,14 @@ async function newMessageHandler(payload) {
     await payload.markAsRead(); //Payload is marked as delivered or Acked.
 }
 
-const summary = await consumerGroup.pendingSummary(); //Provides summary of payloads which have delivered but not acked yet.
+//Provides summary of payloads which have delivered but not acked yet.
+const summary = await consumerGroup.pendingSummary();
 
-const sucess = consumerGroup.unsubscribe(subscriptionHandle); //Unsubscribes the consumer from the group.
+//Unsubscribes the consumer from the group.
+const sucess = consumerGroup.unsubscribe(subscriptionHandle); 
 
-const consumedMem = await broker.memoryFootprint(); //Amount of memory consumed by this stream in bytes.
+//Amount of memory consumed by this stream in bytes.
+const consumedMem = await broker.memoryFootprint();
 
 ```
 
@@ -46,6 +53,7 @@ const consumedMem = await broker.memoryFootprint(); //Amount of memory consumed 
 
 1. Authors love for Open Source.
 2. [IORedis](https://www.npmjs.com/package/ioredis).
+3. [shortid](https://www.npmjs.com/package/shortid).
 
 ## Contributions
 
