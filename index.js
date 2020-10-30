@@ -1,10 +1,9 @@
-const redisType = require("ioredis");
 const shortid = require("shortid");
 
 class StreamChannelBroker {
 
-    constructor(redisConnectionString, channelName) {
-        this._redisClient = new redisType(redisConnectionString);
+    constructor(redisClient, channelName) {
+        this._redisClient = redisClient;
         this._destroying = false;
         this._channelName = channelName;
         this._activeSubscriptions = new Map();
@@ -168,8 +167,6 @@ class StreamChannelBroker {
     async destroy() {
         this._destroying = true;
         let result = Array.from(this._activeSubscriptions.keys).reduce(((pre, handle) => this._unsubscribe(handle) & pre), true);
-        await this._redisClient.quit();
-        await this._redisClient.disconnect();
         return result;
     }
 

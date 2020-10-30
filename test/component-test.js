@@ -1,6 +1,8 @@
 const assert = require('assert');
 const utils = require('./test-utils');
 const localRedisConnectionString = "redis://127.0.0.1:6379/";
+const redisType = require("ioredis");
+const redisClient = new redisType(localRedisConnectionString);
 const targetType = require('../index').StreamChannelBroker;
 const channelName = "Channel1";
 const maxtimeout = 3000;
@@ -8,10 +10,12 @@ let target = null;
 
 describe('RedisStreamsBroker Component Tests', function () {
     this.beforeAll(async function () {
-        target = new targetType(localRedisConnectionString, channelName);
+        target = new targetType(redisClient, channelName);
     });
     this.afterAll(async function () {
         await target.destroy();
+        await redisClient.quit();
+        await redisClient.disconnect();
     });
     this.beforeEach(async function () {
         //Clean all keys

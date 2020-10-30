@@ -1,9 +1,10 @@
+import redisNs from '@types/ioredis'
 export declare class StreamChannelBroker {
-    constructor(redisConnectionString: string, channelName: string);
+    constructor(redisClient: redisNs.Redis, channelName: string);
     publish(payload: any, maximumApproximateMessages?: number): Promise<string>;
     destroy(): Promise<boolean>;
     joinConsumerGroup(groupName: string, readFrom: string): Promise<ConsumerGroup>;
-    memoryFootprint():Promise<integer>;
+    memoryFootprint(): Promise<integer>;
 }
 
 declare class ConsumerGroup {
@@ -18,7 +19,7 @@ declare class Payload {
     channel: string;
     id: string;
     payload: any;
-    markAsRead(dropMessage?:boolean): Promise<boolean>;
+    markAsRead(dropMessage?: boolean): Promise<boolean>;
 }
 
 declare class GroupSummary {
