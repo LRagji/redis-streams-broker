@@ -32,10 +32,18 @@ const subscriptionHandle = await consumerGroup.subscribe("Consumer1", newMessage
 
 // Handler for arriving Payload
 async function newMessageHandler(payload) {
-    console.log("Payload Id:", payload.id); //Payload Id
-    console.log("Payload Received from :", payload.channel); //Stream name
-    console.log("Actual Payload:", payload.payload); //Actual Payload
-    await payload.markAsRead(); //Payload is marked as delivered or Acked.
+    for (let index = 0; index < payload.length; index++) {
+        try {
+            const element = payload[index];
+            console.log("Payload Id:", element.id); //Payload Id
+            console.log("Payload Received from :", element.channel); //Stream name
+            console.log("Actual Payload:", element.payload); //Actual Payload
+            await element.markAsRead(); //Payload is marked as delivered or Acked also optionaly the message can be dropped.
+        }
+        catch (exception) {
+            console.error(exception);
+        }
+    }
 }
 
 //Provides summary of payloads which have delivered but not acked yet.

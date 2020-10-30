@@ -18,7 +18,7 @@ declare class Payload {
     channel: string;
     id: string;
     payload: any;
-    markAsRead(): Promise<boolean>;
+    markAsRead(dropMessage?:boolean): Promise<boolean>;
 }
 
 declare class GroupSummary {

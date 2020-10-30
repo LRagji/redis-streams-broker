@@ -69,8 +69,16 @@ class StreamChannelBroker {
         }
     }
 
-    async _acknowledgeMessage(groupName, messageId) {
-        let result = await this._redisClient.xack(this._channelName, groupName, messageId);
+    async _acknowledgeMessage(groupName, messageId, dropMessage = false) {
+        let result;
+        if (dropMessage === false) {
+            result = await this._redisClient.xack(this._channelName, groupName, messageId);
+        } else {
+            result = await this._redisClient.multi()
+                .xack(this._channelName, groupName, messageId)
+                .xdel(this._channelName, messageId)
+                .exec();
+        }
         return result === 1;
     }
 
@@ -80,7 +88,8 @@ class StreamChannelBroker {
             let streamName = responses[responseIdx][0];
             for (let messageIdIdx = 0; messageIdIdx < responses[responseIdx][1].length; messageIdIdx++) {
                 let messageId = responses[responseIdx][1][messageIdIdx][0];
-                let payload = { "channel": streamName, "id": messageId, "markAsRead": async () => await this._acknowledgeMessage(groupName, messageId), payload: {} };
+                let payload = { "channel": streamName, "id": messageId, payload: {} };
+                payload["markAsRead"] = async (dropMessage) => await this._acknowledgeMessage(groupName, messageId, dropMessage);
                 for (let propertyIdx = 0; propertyIdx < responses[responseIdx][1][messageIdIdx][1].length;) {
                     payload.payload[responses[responseIdx][1][messageIdIdx][1][propertyIdx]] = responses[responseIdx][1][messageIdIdx][1][propertyIdx + 1];
                     propertyIdx += 2;
@@ -144,12 +153,16 @@ class StreamChannelBroker {
         if (keyValuePairs.length === 0) {
             throw new Error(`Payload cannot be empty.`);
         }
-
-        return await this._redisClient.xadd(this._channelName, 'MAXLEN', '~', maximumApproximateMessages, '*', ...keyValuePairs);
+        if (maximumApproximateMessages < 0) {
+            return await this._redisClient.xadd(this._channelName, '*', ...keyValuePairs);
+        }
+        else {
+            return await this._redisClient.xadd(this._channelName, 'MAXLEN', '~', maximumApproximateMessages, '*', ...keyValuePairs);
+        }
     }
 
     async memoryFootprint() {
-        return await this._redisClient.memory("usage", this._channelName,"samples",0);
+        return await this._redisClient.memory("usage", this._channelName, "samples", 0);
     }
 
     async destroy() {
