@@ -1,6 +1,9 @@
 const shortid = require("shortid");
+const scripto = require('redis-scripto');
+const path = require('path');
 
 class StreamChannelBroker {
+    #scriptingEngine;
 
     constructor(redisClient, channelName) {
         this._redisClient = redisClient;
@@ -17,6 +20,16 @@ class StreamChannelBroker {
         this._acknowledgeMessage = this._destroyingCheckWrapper(this._acknowledgeMessage.bind(this));
         this._unsubscribe = this._destroyingCheckWrapper(this._unsubscribe.bind(this), false);
         this._groupPendingSummary = this._destroyingCheckWrapper(this._groupPendingSummary.bind(this), false);
+        this.#scriptingEngine = new scripto(this._redisClient);
+        this.#scriptingEngine.loadFromDir(path.resolve(path.dirname(__filename), 'lua'));
+        this.#scriptingEngine.runLuaScriptAsync = async (scriptName, keys, args) => new Promise((resolve, reject) => this.#scriptingEngine.run(scriptName, keys, args, function (err, result) {
+            if (err != undefined) {
+                reject(err);
+                return;
+            }
+            resolve(result)
+        }));
+        this.#scriptingEngine.runLuaScriptAsync.bind(this.#scriptingEngine);
     }
 
     _destroyingCheckWrapper(fn, async = true) {
@@ -110,17 +123,7 @@ class StreamChannelBroker {
     }
 
     async joinConsumerGroup(groupName, readFrom = '$') {
-        const keyExists = await this._redisClient.exists(this._channelName);
-        if (keyExists === 1) {
-            const existingGroups = await this._redisClient.xinfo("GROUPS", this._channelName);
-            if (existingGroups.find(e => e[1] === groupName) === undefined) {
-                await this._redisClient.xgroup("CREATE", this._channelName, groupName, readFrom);
-            }
-        }
-        else {
-            await this._redisClient.xgroup("CREATE", this._channelName, groupName, readFrom, "MKSTREAM");
-        }
-
+        await this.#scriptingEngine.runLuaScriptAsync("create-group", [this._channelName], [groupName, readFrom]);
         return {
             "name": groupName,
             "readFrom": readFrom,
