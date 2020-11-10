@@ -54,14 +54,17 @@ class StreamChannelBroker {
 
     async _subscribe(groupName, consumerName, handler, pollSpan = 1000, payloadsToFetch = 2, subscriptionHandle = shortid.generate()) {
         const intervalHandle = setTimeout(async () => {
-            const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "COUNT", payloadsToFetch, "STREAMS", this._channelName, ">");
-            if (messages !== null) {
-                await this._unsubscribe(subscriptionHandle);
-                let streamPayloads = this._transformResponseToMessage(messages, groupName);
-                await handler(streamPayloads);
+            try {
+                const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "COUNT", payloadsToFetch, "STREAMS", this._channelName, ">");
+                if (messages !== null) {
+                    let streamPayloads = this._transformResponseToMessage(messages, groupName);
+                    await handler(streamPayloads);
+                }
             }
-            if (this._destroying === false) {
-                await this._subscribe(groupName, consumerName, handler, pollSpan, payloadsToFetch, subscriptionHandle);
+            finally {
+                if (this._destroying === false && this._unsubscribe(subscriptionHandle)) {
+                    await this._subscribe(groupName, consumerName, handler, pollSpan, payloadsToFetch, subscriptionHandle);
+                }
             }
         }, pollSpan);
         let subscriptions = this._activeSubscriptions.get(subscriptionHandle) || [];
