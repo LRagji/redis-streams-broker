@@ -4,10 +4,10 @@
   "description": "This package is a broker to redis stream data type, This package provides guaranteed message delivery feature with acknowledgement.",
   "main": "index.js",
   "scripts": {
-    "mocha": "./node_modules/mocha/bin/mocha",
+    "mocha": "mocha",
     "test": "npm run redisstart && npm run mocha && npm run redisstop",
     "redisstop": "docker stop streamz",
-    "redisstart": "npm run redisstop || true && docker run --name streamz -p 6379:6379 -itd --rm redis:latest"
+    "redisstart": "npm run redisstop || node -v && docker run --name streamz -p 6379:6379 -itd --rm redis:latest"
   },
   "repository": {
     "type": "git",
