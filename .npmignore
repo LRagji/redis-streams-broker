@@ -1,0 +1,9 @@
+  
+test
+src
+js_coverage
+ts_coverage
+.vscode
+.nyc_output
+Dockerfile
+tsconfig.json
