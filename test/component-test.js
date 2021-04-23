@@ -219,4 +219,28 @@ describe('RedisStreamsBroker Component Tests', function () {
         assert.deepEqual(consumer2Sub, true, "Failed to unsubscribe, for consumer 2");
 
     }).timeout(maxtimeout * 2);
+
+    it('Should join group when stream already exists.', async function () {
+
+        //RUN
+        let consumerGroup = await target.joinConsumerGroup("MyGroup");
+        let consumerGroup2 = await target.joinConsumerGroup("MyGroup2");
+
+        //VERIFY
+        assert.notDeepEqual(consumerGroup, undefined, "Consumer group cannot be null.");
+        assert.notDeepEqual(consumerGroup2, undefined, "Consumer group cannot be null.");
+
+    }).timeout(maxtimeout * 2);
+
+    it('Should not error when same group is requested to create.', async function () {
+
+        //RUN
+        let consumerGroup = await target.joinConsumerGroup("MyGroup");
+        let consumerGroup2 = await target.joinConsumerGroup("MyGroup");
+
+        //VERIFY
+        assert.notDeepEqual(consumerGroup, undefined, "Consumer group cannot be null.");
+        assert.notDeepEqual(consumerGroup2, undefined, "Consumer group cannot be null.");
+        
+    }).timeout(maxtimeout * 2);
 })

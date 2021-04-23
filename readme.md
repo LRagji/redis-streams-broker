@@ -62,7 +62,6 @@ const consumedMem = await broker.memoryFootprint();
 1. Authors love for Open Source.
 2. [IORedis](https://www.npmjs.com/package/ioredis).
 3. [shortid](https://www.npmjs.com/package/shortid).
-4. [redis-scripto](https://www.npmjs.com/package/redis-scripto).
 
 ## Contributions
 
