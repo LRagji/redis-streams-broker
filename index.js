@@ -40,13 +40,16 @@ class StreamChannelBroker {
         }
     }
 
-    async _subscribe(groupName, consumerName, handler, pollSpan = 1000, payloadsToFetch = 2, subscriptionHandle = shortid.generate()) {
+    async _subscribe(groupName, consumerName, handler, pollSpan = 1000, payloadsToFetch = 2, subscriptionHandle = shortid.generate(), readPending = false) {
         const intervalHandle = setTimeout(async () => {
             try {
-                const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "COUNT", payloadsToFetch, "STREAMS", this._channelName, ">");
+                const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "COUNT", payloadsToFetch, "STREAMS", this._channelName, (readPending === false ? ">" : "0"));
                 if (messages !== null) {
                     let streamPayloads = this._transformResponseToMessage(messages, groupName);
                     await handler(streamPayloads);
+                } else if (messages == null & readPending === true) {
+                    //This means all pending messages are processed.
+                    readPending = false;
                 }
             }
             finally {
