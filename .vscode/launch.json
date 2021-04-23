@@ -5,6 +5,33 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Demo IO Redis",
+            "program": "${workspaceFolder}/examples/ioredis.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+        {
+            "name": "Demo Node-Redis",
+            "program": "${workspaceFolder}/examples/node-redis.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+        {
+            "name": "Demo Custom Injection",
+            "program": "${workspaceFolder}/examples/custom.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Component Tests",
@@ -21,6 +48,6 @@
             "skipFiles": [
                 "<node_internals>/**"
             ]
-        },
+        }
     ]
 }
