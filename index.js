@@ -47,14 +47,15 @@ class StreamChannelBroker {
                 if (messages !== null) {
                     let streamPayloads = this._transformResponseToMessage(messages, groupName);
                     await handler(streamPayloads);
-                } else if (messages == null & readPending === true) {
-                    //This means all pending messages are processed.
-                    readPending = false;
+                    if (streamPayloads.length === 0 & readPending === true) {// The server should respond back with zero and not with null response. //Look at usage example https://redis.io/commands/xreadgroup
+                        //This means all pending messages are processed.
+                        readPending = false;
+                    }
                 }
             }
             finally {
                 if (this._destroying === false && this._unsubscribe(subscriptionHandle)) {
-                    await this._subscribe(groupName, consumerName, handler, pollSpan, payloadsToFetch, subscriptionHandle);
+                    await this._subscribe(groupName, consumerName, handler, pollSpan, payloadsToFetch, subscriptionHandle, readPending);
                 }
             }
         }, pollSpan);
