@@ -80,13 +80,14 @@ class StreamChannelBroker {
         let result;
         if (dropMessage === false) {
             result = await this._redisClient.xack(this._channelName, groupName, messageId);
+            return result === 1;
         } else {
             result = await this._redisClient.multi()
                 .xack(this._channelName, groupName, messageId)
                 .xdel(this._channelName, messageId)
                 .exec();
+            return result[0][1] === result[1][1] && result[0][1] === 1;
         }
-        return result === 1;
     }
 
     _transformResponseToMessage(responses, groupName) {
