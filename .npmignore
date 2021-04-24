@@ -7,3 +7,4 @@ ts_coverage
 .nyc_output
 Dockerfile
 tsconfig.json
+examples
