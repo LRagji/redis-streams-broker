@@ -14,15 +14,6 @@
             "type": "pwa-node"
         },
         {
-            "name": "Demo Node-Redis",
-            "program": "${workspaceFolder}/examples/node-redis.js",
-            "request": "launch",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "type": "pwa-node"
-        },
-        {
             "name": "Demo Custom Injection",
             "program": "${workspaceFolder}/examples/custom.js",
             "request": "launch",

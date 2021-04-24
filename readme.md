@@ -1,25 +1,31 @@
 # redis-streams-broker
 
-This simple package is based on redis streams data type which provides you with following features 
-1. Centralized Que. (Using Redis)
-2. Guarantee of message delivery via consumer acknowledgements.
-3. Consumer Group functionality for scalability. (Just like Kafka)
+This package is based on [redis stream](https://github.com/LRagji/redis-streams-broker) data type which provides you with following features 
+1. Broker to redis stream which can be used as centralized que between microservices. (Using Redis)
+2. Support for injectable redis client (be it [ioredis](https://www.npmjs.com/package/ioredis) or [redis](https://www.npmjs.com/package/redis))
+3. Guarantee of message delivery via consumer acknowledgements.
+4. Consumer Group functionality for scalability. (Just like Kafka)
+5. Option to drop a message when its acked, thus keeping memory footprint in check.
 
 ## Getting Started
 
 1. Install using `npm -i redis-streams-broker`
 2. Require in your project. `const brokerType = require('redis-streams-broker').StreamChannelBroker;`
 3. Run redis on local docker if required. `docker run --name streamz -p 6379:6379 -itd --rm redis:latest`
-3. Instantiate with a redis connection and name for the stream. `const broker = new brokerType(redisConnectionString, name);`
+3. Instantiate with a redis client and name for the stream. `const broker = new brokerType(redisClient, name);`
 4. All done, Start using it!!.
 
 ## Examples/Code snippets
 
+1. Please find example code for injectable ioredis client [here](https://github.com/LRagji/redis-streams-broker/blob/master/examples/ioredis.js)
+2. Please find example code for injectable custom client [here](https://github.com/LRagji/redis-streams-broker/blob/master/examples/custom.js)
+
 ```javascript
+const Redis = require("ioredis");
 const redisConnectionString = "redis://127.0.0.1:6379/";
 const qName = "Queue";
-const brokerType = require('redis-streams-broker').StreamChannelBroker;
-const broker = new brokerType(redisConnectionString, qName);
+const redisClient = new Redis(redisConnectionString);
+const brokerType = require('../index').StreamChannelBroker;
 
 //Used to publish a paylod on stream.
 const payloadId = await broker.publish({ a: "Hello", b: "World" }); 
@@ -59,9 +65,8 @@ const consumedMem = await broker.memoryFootprint();
 
 ## Built with
 
-1. Authors love for Open Source.
-2. [IORedis](https://www.npmjs.com/package/ioredis).
-3. [shortid](https://www.npmjs.com/package/shortid).
+1. Authors :heart for Open Source.
+2. [shortid](https://www.npmjs.com/package/shortid).
 
 ## Contributions
 
