@@ -1,6 +1,6 @@
-import redisNs from 'ioredis'
+
 export declare class StreamChannelBroker {
-    constructor(redisClient: redisNs.Redis, channelName: string);
+    constructor(redisClient: any, channelName: string);
     publish(payload: any, maximumApproximateMessages?: number): Promise<string>;
     destroy(): Promise<boolean>;
     joinConsumerGroup(groupName: string, readFrom: string): Promise<ConsumerGroup>;
@@ -11,7 +11,7 @@ declare class ConsumerGroup {
     name: string;
     readFrom: string;
     subscribe(consumerName: string, handler: (payload: Payload[]) => Promise<boolean>, pollSpan?: number, payloadsToFetch?: number, subscriptionHandle?: string, readPending?: boolean): Promise<string>;
-    unsubscribe(subscriptionHandle: string): Promise<string>;
+    unsubscribe(subscriptionHandle: string): Promise<boolean>;
     pendingSummary(): Promise<GroupSummary>;
 }
 

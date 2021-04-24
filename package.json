@@ -29,7 +29,6 @@
   },
   "homepage": "https://github.com/LRagji/redis-streams-broker#readme",
   "dependencies": {
-    "@types/ioredis": "^4.17.6",
     "shortid": "^2.2.15"
   },
   "devDependencies": {
