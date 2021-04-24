@@ -1,0 +1,16 @@
+{
+  "name": "hsio",
+  "version": "0.0.1",
+  "description": "This is a test example",
+  "main": "fast-producer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "rediscli":"docker exec -it ecstatic_almeida redis-cli"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ioredis": "^4.27.1",
+    "redis-streams-broker": "0.0.9"
+  }
+}

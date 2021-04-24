@@ -38,10 +38,10 @@ const consumerGroup = await broker.joinConsumerGroup("MyGroup");
 const subscriptionHandle = await consumerGroup.subscribe("Consumer1", newMessageHandler); 
 
 // Handler for arriving Payload
-async function newMessageHandler(payload) {
-    for (let index = 0; index < payload.length; index++) {
+async function newMessageHandler(payloads) {
+    for (let index = 0; index < payloads.length; index++) {
         try {
-            const element = payload[index];
+            const element = payloads[index];
             console.log("Payload Id:", element.id); //Payload Id
             console.log("Payload Received from :", element.channel); //Stream name
             console.log("Actual Payload:", element.payload); //Actual Payload
