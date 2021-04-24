@@ -1,9 +1,35 @@
 const assert = require('assert');
 const utils = require('./test-utils');
 const localRedisConnectionString = "redis://127.0.0.1:6379/";
-const redisType = require("ioredis");
-const redisClient = new redisType(localRedisConnectionString);
+
+let redisClient;
+switch (process.env.REDISCLIENT) {
+    case '1':
+        console.log("Using redis as redis client.")
+        const redis = require("redis");
+        const myFavClient = redis.createClient(localRedisConnectionString);
+        const { promisify } = require("util");
+        redisClient = {};
+        redisClient.xreadgroup = promisify(myFavClient.xreadgroup).bind(myFavClient);
+        redisClient.xack = promisify(myFavClient.xack).bind(myFavClient);
+        redisClient.multi = promisify(myFavClient.multi).bind(myFavClient);
+        redisClient.xdel = promisify(myFavClient.xdel).bind(myFavClient);
+        redisClient.xpending = promisify(myFavClient.xpending).bind(myFavClient);
+        redisClient.xgroup = promisify(myFavClient.xgroup).bind(myFavClient);
+        redisClient.memory = promisify(myFavClient.memory).bind(myFavClient);
+        redisClient.xadd = promisify(myFavClient.xadd).bind(myFavClient);
+        redisClient.quit = promisify(myFavClient.quit).bind(myFavClient);
+        redisClient.flushall = promisify(myFavClient.flushall).bind(myFavClient);
+        break;
+    default:
+        console.log("Defaulting to ioredis as redis client Enviroment: "+process.env.REDISCLIENT)
+        const redisType = require("ioredis");
+        redisClient = new redisType(localRedisConnectionString);
+        break;
+}
+
 const targetType = require('../index').StreamChannelBroker;
+const { Console } = require('console');
 const channelName = "Channel1";
 const maxtimeout = 3000;
 let target = null;
@@ -15,7 +41,6 @@ describe('RedisStreamsBroker Component Tests', function () {
     this.afterAll(async function () {
         await target.destroy();
         await redisClient.quit();
-        await redisClient.disconnect();
     });
     this.beforeEach(async function () {
         //Clean all keys
@@ -241,6 +266,6 @@ describe('RedisStreamsBroker Component Tests', function () {
         //VERIFY
         assert.notDeepEqual(consumerGroup, undefined, "Consumer group cannot be null.");
         assert.notDeepEqual(consumerGroup2, undefined, "Consumer group cannot be null.");
-        
+
     }).timeout(maxtimeout * 2);
 })
