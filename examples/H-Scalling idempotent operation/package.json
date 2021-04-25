@@ -5,12 +5,14 @@
   "main": "fast-producer.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "rediscli":"docker exec -it ecstatic_almeida redis-cli"
+    "rediscli": "docker exec -it ecstatic_almeida redis-cli",
+    "redisstart": "docker run --name ecstatic_almeida -p 6379:6379 -itd --rm redis:latest"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "ioredis": "^4.27.1",
+    "piscina": "^2.2.0",
     "redis-streams-broker": "0.0.9"
   }
 }

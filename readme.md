@@ -19,6 +19,7 @@ This package is based on [redis stream](https://github.com/LRagji/redis-streams-
 
 1. Please find example code for injectable ioredis client [here](https://github.com/LRagji/redis-streams-broker/blob/master/examples/ioredis.js)
 2. Please find example code for injectable custom client [here](https://github.com/LRagji/redis-streams-broker/blob/master/examples/custom.js)
+3. Please find multi threading examples [here](https://github.com/LRagji/redis-streams-broker/tree/master/examples/H-Scalling%20idempotent%20operation)
 
 ```javascript
 const Redis = require("ioredis");
@@ -75,7 +76,7 @@ const consumedMem = await broker.memoryFootprint();
 2. Raise a Pull Request.
 
 ## Current Version:
-0.0.9[Beta]
+0.0.10[Beta]
 
 ## License
 

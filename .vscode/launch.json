@@ -23,6 +23,15 @@
             "type": "pwa-node"
         },
         {
+            "name": "Demo Multithreaded Consumer",
+            "program": "${workspaceFolder}/examples/H-Scalling idempotent operation/slow-consumer-mult-threaded.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Component Tests",
