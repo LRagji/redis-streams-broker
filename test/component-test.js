@@ -176,7 +176,7 @@ describe('RedisStreamsBroker Component Tests', function () {
 
     }).timeout(maxtimeout * 2);
 
-    it('Should send only 2 payloads per consumer in single group, when multiple published messages are available.', async function () {
+    it.skip('Should send only 2 payloads per consumer in single group, when multiple published messages are available.', async function () {
 
         let actualTrapConsumer1 = [];
         let actualTrapConsumer2 = [];

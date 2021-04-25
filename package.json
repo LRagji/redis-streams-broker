@@ -7,7 +7,8 @@
     "mocha": "mocha",
     "test": "npm run redisstart && npm run mocha && npm run redisstop && npm run redisstart && env REDISCLIENT=1 npm run mocha && npm run redisstop",
     "redisstop": "docker stop streamz",
-    "redisstart": "npm run redisstop || node -v && docker run --name streamz -p 6379:6379 -itd --rm redis:latest"
+    "redisstart": "npm run redisstop || node -v && docker run --name streamz -p 6379:6379 -itd --rm redis:latest",
+    "rediscli": "docker exec -it streamz redis-cli"
   },
   "repository": {
     "type": "git",

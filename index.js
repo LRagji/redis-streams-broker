@@ -43,7 +43,7 @@ class StreamChannelBroker {
     async _subscribe(groupName, consumerName, handler, pollSpan = 1000, payloadsToFetch = 2, subscriptionHandle = shortid.generate(), readPending = false) {
         const intervalHandle = setTimeout(async () => {
             try {
-                const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "COUNT", payloadsToFetch, "STREAMS", this._channelName, (readPending === false ? ">" : "0"));
+                const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "COUNT", payloadsToFetch, "BLOCK", pollSpan, "STREAMS", this._channelName, (readPending === false ? ">" : "0"));
                 if (messages !== null) {
                     let streamPayloads = this._transformResponseToMessage(messages, groupName);
                     await handler(streamPayloads);
@@ -58,7 +58,7 @@ class StreamChannelBroker {
                     await this._subscribe(groupName, consumerName, handler, pollSpan, payloadsToFetch, subscriptionHandle, readPending);
                 }
             }
-        }, pollSpan);
+        }, 0);
         let subscriptions = this._activeSubscriptions.get(subscriptionHandle) || [];
         subscriptions.push(intervalHandle);
         this._activeSubscriptions.set(subscriptionHandle, subscriptions);
@@ -98,9 +98,17 @@ class StreamChannelBroker {
                 let messageId = responses[responseIdx][1][messageIdIdx][0];
                 let payload = { "channel": streamName, "id": messageId, payload: {} };
                 payload["markAsRead"] = async (dropMessage) => await this._acknowledgeMessage(groupName, messageId, dropMessage);
-                for (let propertyIdx = 0; propertyIdx < responses[responseIdx][1][messageIdIdx][1].length;) {
-                    payload.payload[responses[responseIdx][1][messageIdIdx][1][propertyIdx]] = responses[responseIdx][1][messageIdIdx][1][propertyIdx + 1];
-                    propertyIdx += 2;
+                payload["markAsRead"] = async (dropMessage) => await this._acknowledgeMessage(groupName, messageId, dropMessage);
+                if (responses[responseIdx][1][messageIdIdx][1] == null) {
+                    //This happens when actual message is rolled over but its still in pending list of the consumer.
+                    //Or someone deleted the message from Redis while it was still pending.
+                    payload.payload = null;
+                }
+                else {
+                    for (let propertyIdx = 0; propertyIdx < responses[responseIdx][1][messageIdIdx][1].length;) {
+                        payload.payload[responses[responseIdx][1][messageIdIdx][1][propertyIdx]] = responses[responseIdx][1][messageIdIdx][1][propertyIdx + 1];
+                        propertyIdx += 2;
+                    }
                 }
                 payloads.push(payload);
             }
