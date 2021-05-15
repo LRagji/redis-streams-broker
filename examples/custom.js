@@ -9,7 +9,11 @@ const { promisify } = require("util");
 const redisInjectableClient = {};
 redisInjectableClient.xreadgroup = promisify(myFavClient.xreadgroup).bind(myFavClient);
 redisInjectableClient.xack = promisify(myFavClient.xack).bind(myFavClient);
-redisInjectableClient.multi = promisify(myFavClient.multi).bind(myFavClient);
+redisInjectableClient.multi = () => {
+    let multiObject = myFavClient.multi();
+    multiObject.exec = promisify(multiObject.exec);
+    return multiObject;
+};
 redisInjectableClient.xdel = promisify(myFavClient.xdel).bind(myFavClient);
 redisInjectableClient.xpending = promisify(myFavClient.xpending).bind(myFavClient);
 redisInjectableClient.xgroup = promisify(myFavClient.xgroup).bind(myFavClient);
