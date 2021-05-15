@@ -20,6 +20,7 @@ This package is based on [redis stream](https://github.com/LRagji/redis-streams-
 1. Please find example code for injectable ioredis client [here](https://github.com/LRagji/redis-streams-broker/blob/master/examples/ioredis.js)
 2. Please find example code for injectable custom client [here](https://github.com/LRagji/redis-streams-broker/blob/master/examples/custom.js)
 3. Please find multi threading examples [here](https://github.com/LRagji/redis-streams-broker/tree/master/examples/H-Scalling%20idempotent%20operation)
+4. Please find async processing examples [here](https://github.com/LRagji/redis-streams-broker/tree/master/examples/Stream%20Processing)
 
 ```javascript
 const Redis = require("ioredis");
@@ -127,7 +128,7 @@ Class `ConsumerGroup`
 
     *consumerName*: Name of the consumer who is subscribing via the consumer group object.
 
-    *handler*: A callback function which will be invoked when new message a.k.a payload(s) arrive. Should be of signature `(payload: Payload[]) => Promise<boolean>` should be async return from this function is ignored for now, look at `Payload` class below for more details.
+    *handler*: A callback function which will be invoked when new message a.k.a payload(s) arrive. Should be of signature `(payload: Payload[]) => Promise<number>` should be async & return from this function is number of messages to fetch from redis(expected +ve number; -ve or 0 will unsubscribe from the group stopping all further reads from stream,if NAN then defaults to number provided when subscribing), look at `Payload` class below for more details.
 
     *pollSpan*: Number of millisecond to wait after completion of handler to check for next available message in stream. Defaulted to 1000 milliseconds.
 

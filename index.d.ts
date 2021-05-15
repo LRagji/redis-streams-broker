@@ -10,7 +10,7 @@ export declare class StreamChannelBroker {
 declare class ConsumerGroup {
     name: string;
     readFrom: string;
-    subscribe(consumerName: string, handler: (payload: Payload[]) => Promise<boolean>, pollSpan?: number, payloadsToFetch?: number, subscriptionHandle?: string, readPending?: boolean): Promise<string>;
+    subscribe(consumerName: string, handler: (payload: Payload[]) => Promise<number>, pollSpan?: number, payloadsToFetch?: number, subscriptionHandle?: string, readPending?: boolean): Promise<string>;
     unsubscribe(subscriptionHandle: string): Promise<boolean>;
     pendingSummary(): Promise<GroupSummary>;
 }

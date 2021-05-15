@@ -46,7 +46,10 @@ class StreamChannelBroker {
                 const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "COUNT", payloadsToFetch, "BLOCK", pollSpan, "STREAMS", this._channelName, (readPending === false ? ">" : "0"));
                 if (messages !== null) {
                     let streamPayloads = this._transformResponseToMessage(messages, groupName);
-                    await handler(streamPayloads);
+                    let nextPayloadToFetch = await handler(streamPayloads);
+                    if (nextPayloadToFetch != null && !Number.isNaN(nextPayloadToFetch) && nextPayloadToFetch != "") {
+                        payloadsToFetch = Number.parseInt(nextPayloadToFetch);
+                    }
                     if (streamPayloads.length === 0 & readPending === true) {// The server should respond back with zero and not with null response. //Look at usage example https://redis.io/commands/xreadgroup
                         //This means all pending messages are processed.
                         readPending = false;
@@ -55,7 +58,9 @@ class StreamChannelBroker {
             }
             finally {
                 if (this._destroying === false && this._unsubscribe(subscriptionHandle)) {
-                    await this._subscribe(groupName, consumerName, handler, pollSpan, payloadsToFetch, subscriptionHandle, readPending);
+                    if (payloadsToFetch > 0) {
+                        await this._subscribe(groupName, consumerName, handler, pollSpan, payloadsToFetch, subscriptionHandle, readPending);
+                    }
                 }
             }
         }, 0);

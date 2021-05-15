@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Stream Processing",
+            "program": "${workspaceFolder}/examples/Stream Processing/index.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+
+        {
             "name": "Demo IO Redis",
             "program": "${workspaceFolder}/examples/ioredis.js",
             "request": "launch",
