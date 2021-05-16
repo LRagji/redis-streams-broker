@@ -12,7 +12,7 @@ switch (process.env.REDISCLIENT) {
         redisClient = {};
         redisClient.xreadgroup = promisify(myFavClient.xreadgroup).bind(myFavClient);
         redisClient.xack = promisify(myFavClient.xack).bind(myFavClient);
-        redisInjectableClient.multi = () => {
+        redisClient.multi = () => {
             let multiObject = myFavClient.multi();
             multiObject.exec = promisify(multiObject.exec);
             return multiObject;
