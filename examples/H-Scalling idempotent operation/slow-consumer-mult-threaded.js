@@ -9,7 +9,6 @@ const redisConnectionString = "redis://127.0.0.1:6379/";
 const qName = "hsio";
 const redisClient = new Redis(redisConnectionString);
 const brokerType = require('../../index').StreamChannelBroker;
-const { Console } = require('console');
 const broker = new brokerType(redisClient, qName);
 const totalAsyncBandwidth = 10;
 const threadPool = new Piscina({
@@ -70,14 +69,18 @@ async function newMessageHandler(payloads) {
 
         //Await for atleast one to complete
         if (inProgressItems.size > 0) {
-            try {
-                completedPayloadId = await Promise.race(inProgressItems.values());
-            }
-            finally {
-                if (inProgressItems.has(completedPayloadId) === true) {
-                    inProgressItems.delete(completedPayloadId);
+            do {
+                try {
+                    completedPayloadId = await Promise.race(inProgressItems.values());
+                }
+                finally {
+                    if (inProgressItems.has(completedPayloadId) === true) {
+                        inProgressItems.delete(completedPayloadId);
+                    }
+                    console.log(`${completedPayloadId} Threads:${threadPool.threads.length}/${threadPool.options.maxThreads} Pending:${inProgressItems.size} QTime(p97.5): ${threadPool.waitTime.p97_5}ms`);
                 }
             }
+            while (inProgressItems.size >= totalAsyncBandwidth) //This is so that we donot get any into situation where more work item is qued up than we aimed for
         }
     }
     catch (exception) {
@@ -86,7 +89,9 @@ async function newMessageHandler(payloads) {
     finally {
         const totalItems = inProgressItems.size;
         const itemsCompleted = totalAsyncBandwidth - totalItems;
-        console.log(`${completedPayloadId} Threads:${threadPool.threads.length}/${threadPool.options.maxThreads} Pending: ${itemsCompleted}/${totalItems} QTime(p97.5): ${threadPool.waitTime.p97_5}ms`);
+        if (itemsCompleted <= 0) {
+            console.error("Its calling unsubscribe");
+        }
         return itemsCompleted
     }
 }
