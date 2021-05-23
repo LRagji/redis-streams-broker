@@ -8,45 +8,128 @@ const Redis = require("ioredis");
 const redisConnectionString = "redis://127.0.0.1:6379/";
 const qName = "hsio";
 const redisClient = new Redis(redisConnectionString);
-const brokerType = require('redis-streams-broker').StreamChannelBroker;
+const brokerType = require('../../index').StreamChannelBroker;
+const { Console } = require('console');
 const broker = new brokerType(redisClient, qName);
+const totalAsyncBandwidth = 10;
 const threadPool = new Piscina({
     filename: path.resolve(__dirname, 'payload-processing.js'),
-    maxThreads:10,
-    minThreads:5
+    maxThreads: totalAsyncBandwidth > 0 ? totalAsyncBandwidth : 1,
+    minThreads: 1
 });
+const inProgressItems = new Map();
+
+
+//Thread Pool Executor
+async function postExecutionOnThreadPool(payloadWithMeta) {
+    try {
+        let threadResponse = await threadPool.runTask(payloadWithMeta.payload);
+        if (threadResponse === true) {
+            if (await payloadWithMeta.markAsRead(true) !== true) {
+                throw new Error(`Failed to ack message id ${payloadWithMeta.id}, payload will be re-processed.`);
+            }
+        }
+        else {
+            throw new Error(`Unknown response ${threadResponse} item is not acked.`);
+        }
+    }
+    finally {
+        return payloadWithMeta.id;
+    }
+}
+
+//Deleted Message but still in pending list handler
+async function handleDroppedMessage(payloadWithMeta) {
+    try {
+        //Invoke message missing callback
+        console.log(`${payloadWithMeta.id} is missing!.`);
+        //You cannot delete it cause its already deleted.
+        await payloadWithMeta.markAsRead();
+    }
+    finally {
+
+        return payloadWithMeta.id;
+    }
+}
 
 // Handler for arriving Payload
 async function newMessageHandler(payloads) {
+    if (payloads.length <= 0) return totalAsyncBandwidth;
+    let completedPayloadId = null;
     try {
-        const processingHanldes = payloads.map(p => {
-            return new Promise((acc, rej) => {
-                threadPool.runTask(p.payload)
-                    .then(res => {
-                        if (res === "" || res ==="Rollover") {
-                            p.markAsRead(true)
-                                .then(acc)
-                                .catch(rej);
-                        }
-                        else {
-                            rej(new Error(res));
-                        }
-                    })
-                    .catch(rej);
-            });
-        })
-        const results = await Promise.allSettled(processingHanldes);
-        console.log(`${results.reduce((acc, e) => acc && e.status==="fulfilled", true)?"Success":"Failed"} Allocated Threads:${threadPool.options.minThreads} to ${threadPool.options.maxThreads} Acive: ${threadPool.threads.length} Wait time(p97.5): ${threadPool.waitTime.p97_5} Utilization: ${(threadPool.utilization * 100).toFixed(2)}%`)
+        //Post for execution
+        payloads.forEach(payloadWithMeta => {
+            if (payloadWithMeta.id != null && payloadWithMeta.payload == null) {
+                //This means a message is dropped from redis stream due to it being capped but is on pending list of consumer.
+                inProgressItems.set(payloadWithMeta.id, handleDroppedMessage(payloadWithMeta));
+            }
+            else {
+                inProgressItems.set(payloadWithMeta.id, postExecutionOnThreadPool(payloadWithMeta));
+            }
+        });
 
+        //Await for atleast one to complete
+        if (inProgressItems.size > 0) {
+            try {
+                completedPayloadId = await Promise.race(inProgressItems.values());
+            }
+            finally {
+                if (inProgressItems.has(completedPayloadId) === true) {
+                    inProgressItems.delete(completedPayloadId);
+                }
+            }
+        }
     }
     catch (exception) {
         console.error(exception);
     }
+    finally {
+        const totalItems = inProgressItems.size;
+        const itemsCompleted = totalAsyncBandwidth - totalItems;
+        console.log(`${completedPayloadId} Threads:${threadPool.threads.length}/${threadPool.options.maxThreads} Pending: ${itemsCompleted}/${totalItems} QTime(p97.5): ${threadPool.waitTime.p97_5}ms`);
+        return itemsCompleted
+    }
 }
 
 
-//Creates a consumer group to receive payload
-broker.joinConsumerGroup("MyGroup", 0)
-    .then(consumerGroup => consumerGroup.subscribe("Consumer1", newMessageHandler, 5000, 10, "SlowConsumer", true))
-    .then(console.log)
+
+(async () => {
+
+    //Creates a consumer group to receive payload
+    const consumerGroup = await broker.joinConsumerGroup("MyGroup", 0);
+
+    //Registers a new consumer with Name and Callback for message handlling.
+    const subscriptionHandle = await consumerGroup.subscribe("Consumer1", newMessageHandler, 5000, totalAsyncBandwidth, "SlowConsumer", true);
+    console.log("Subscribed to stream with handle:" + subscriptionHandle);
+
+    //Processing Data (If no data is present in the stream for 5 consecutive seconds then it will unsbscribe)
+    console.log("Draining all messages from stream.");
+    do {
+        //Waiting for all work to finish
+        if (inProgressItems.size > 0) {
+            await Promise.allSettled(inProgressItems.values());
+            inProgressItems.clear();
+        }
+        //Deadband of 5 Sec to wait for any new incomming messages.
+        await new Promise((acc, rej) => setTimeout(acc, 5000));
+    }
+    while (inProgressItems.size > 0)
+
+    //Provides summary of payloads which have delivered but not acked yet.
+    const summary = await consumerGroup.pendingSummary();
+    console.log(`Pending messages: ${summary.total}`);
+
+    //Unsubscribes the consumer from the group.
+    const sucess = consumerGroup.unsubscribe(subscriptionHandle);
+    console.log(`Unsubscribed: ${sucess}`);
+
+    //Amount of memory consumed by this stream in bytes.
+    const consumedMem = await broker.memoryFootprint();
+    console.log(`Total memory: ${consumedMem}Bytes`);
+
+})()
+    .then(() => {
+        console.log("Demonstration successful.");
+        redisClient.quit();
+    })
     .catch(console.error);

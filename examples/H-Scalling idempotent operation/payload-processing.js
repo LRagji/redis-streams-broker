@@ -1,14 +1,16 @@
 async function processPayload(data) {
-    if (data == null) {
-        return "Rollover";
-    }
+    try {
 
-    if ((parseInt(data.lhs) + parseInt(data.rhs)) === parseInt(data.result)) {
-        await new Promise((acc, rej) => setTimeout(acc, 5000));// Fake delay simulating network or cpu load.
-        return ""
+        if ((parseInt(data.lhs) + parseInt(data.rhs)) === parseInt(data.result)) {
+            await new Promise((acc, rej) => setTimeout(acc, 5000));// Fake delay simulating network or cpu load.
+            return true;
+        }
+        else {
+            return false;
+        }
     }
-    else {
-        return "Failed math exam!!!";
+    catch (err) {
+        return false;
     }
 }
 
