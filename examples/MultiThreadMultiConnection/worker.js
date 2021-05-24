@@ -3,17 +3,22 @@ const { Worker, isMainThread, parentPort, workerData } = require('worker_threads
 if (isMainThread) {
     const redisConnectionString = "redis://127.0.0.1:6379/";
     const qName = "hsio";
-    for (let threadCounter = 0; threadCounter < 2; threadCounter++) {
-        let thread = new Promise((resolve, reject) => {
+    const workersPromises = [];
+    const workers = new Map();
+    for (let threadCounter = 0; threadCounter < 1; threadCounter++) {
+        let workerP = new Promise((resolve, reject) => {
+            const groupName = "CG1";
+            const consumer = groupName + (Math.random() * 100).toFixed(0);
             const worker = new Worker(__filename, {
-                workerData: {
+                workerData: JSON.stringify({
                     "redisConnectionString": redisConnectionString,
                     "qName": qName,
-                    "consumerGroupName": "CG1",
-                    "ayncProcessingBudget": 3,
+                    "consumerGroupName": groupName,
+                    "ayncProcessingBudget": 100,
                     "checkTimeout": 15000,
-                    "readFromId": '0'
-                }
+                    "readFromId": '0',
+                    "consumerName": consumer
+                })
             });
             worker.on('message', resolve);
             worker.on('error', reject);
@@ -21,8 +26,36 @@ if (isMainThread) {
                 if (code !== 0)
                     reject(new Error(`Worker stopped with exit code ${code}`));
             });
+            workers.set(consumer, worker);
         });
+        workersPromises.push((async () => {
+            let workerName = await workerP;
+            if (workers.has(workerName)) {
+                workers.delete(workerName);
+            }
+            return workerName;
+        })());
     }
+
+    console.log(`Waiting for Workers(${workersPromises.length}) to complete..`)
+    let diagnostic = async () => {
+        while (workers.size > 0) {
+            workers.forEach((w, name) => {
+                let instrumentation = w.performance.eventLoopUtilization();
+                console.log(`${name}: ${(instrumentation.active/(instrumentation.idle+instrumentation.active)*100.0).toFixed(2)}% ${instrumentation.utilization.toFixed(2)}% `);
+            });
+            await new Promise((acc, rej) => setTimeout(acc, 1000));
+        }
+        return "Diagnostic Completed";
+    };
+    workersPromises.push(diagnostic());
+    Promise.allSettled(workersPromises)
+        .then((r) => {
+            console.table(r);
+            workersPromises.clear();
+            console.log("Completed");
+        })
+        .catch(console.error);
 }
 else {
 
@@ -32,8 +65,8 @@ else {
     let AyncProcessingBudget = 1;
     let ConsumerName = "";
 
-    async function main({ redisConnectionString, qName, consumerGroupName, ayncProcessingBudget = 3, checkTimeout = 15000, readFromId = '0' }) {
-        ConsumerName = consumerGroupName + (Math.random() * 100).toFixed(0);
+    async function main({ redisConnectionString, qName, consumerGroupName, ayncProcessingBudget = 3, checkTimeout = 15000, readFromId = '0', consumerName }) {
+        ConsumerName = consumerName;
         AyncProcessingBudget = ayncProcessingBudget;
         const redisClient = new Redis(redisConnectionString);
         const broker = new brokerType(redisClient, qName);
@@ -42,11 +75,11 @@ else {
         do {
             await Promise.allSettled(inProgressWork.values());
             inProgressWork.clear();
-            await new Promise((acc, rej) => setTimeout(acc, checkTimeout * 3));
+            await new Promise((acc, rej) => setTimeout(acc, checkTimeout * 1));
         }
         while (inProgressWork.size > 0)
         consumerGroup.unsubscribe(subscriptionHandle);
-        await redisClient.quit()
+        await redisClient.quit();
         return ConsumerName;
     }
 
@@ -114,6 +147,5 @@ else {
 
     let config = JSON.parse(workerData);
     main(config)
-        .then(parentPort.postMessage, parentPort.postMessage)
-
+        .then(r => parentPort.postMessage(r), err => parentPort.postMessage(err))
 }

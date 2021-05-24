@@ -6,12 +6,13 @@
     "configurations": [
         {
             "name": "Stream Processing",
-            "program": "${workspaceFolder}/examples/Stream Processing/index.js",
+            "program": "${workspaceFolder}/examples/MultiThreadMultiConnection/worker.js",
             "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "pwa-node"
+            "type": "pwa-node",
+            "outputCapture": "std"
         },
 
         {
