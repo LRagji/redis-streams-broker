@@ -25,8 +25,11 @@ function dataInserts() {
                 console.log("Failed to publish.")
             }
             else {
-                redisClient.xlen(qName)
-                    .then(console.log);
+                redisClient.xrange(qName, "-", "+")
+                    .then((data) => {
+                        console.clear();
+                        console.table(data)
+                    });
             }
         })
         .catch(console.error);

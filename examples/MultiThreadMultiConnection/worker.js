@@ -3,7 +3,7 @@ const { Worker, isMainThread, parentPort, workerData } = require('worker_threads
 if (isMainThread) {
     const redisConnectionString = "redis://127.0.0.1:6379/";
     const qName = "hsio";
-    const workersPromises = [];
+    let workersPromises = [];
     const workers = new Map();
     for (let threadCounter = 0; threadCounter < 1; threadCounter++) {
         let workerP = new Promise((resolve, reject) => {
@@ -42,17 +42,18 @@ if (isMainThread) {
         while (workers.size > 0) {
             workers.forEach((w, name) => {
                 let instrumentation = w.performance.eventLoopUtilization();
-                console.log(`${name}: ${(instrumentation.active/(instrumentation.idle+instrumentation.active)*100.0).toFixed(2)}% ${instrumentation.utilization.toFixed(2)}% `);
+                console.log(`${name}: ${(instrumentation.active / (instrumentation.idle + instrumentation.active) * 100.0).toFixed(2)}% ${instrumentation.utilization.toFixed(2)}% `);
             });
             await new Promise((acc, rej) => setTimeout(acc, 1000));
         }
         return "Diagnostic Completed";
     };
-    workersPromises.push(diagnostic());
+    //workersPromises.push(diagnostic());
     Promise.allSettled(workersPromises)
         .then((r) => {
             console.table(r);
-            workersPromises.clear();
+            workers.clear();
+            workersPromises = [];
             console.log("Completed");
         })
         .catch(console.error);
@@ -71,7 +72,7 @@ else {
         const redisClient = new Redis(redisConnectionString);
         const broker = new brokerType(redisClient, qName);
         const consumerGroup = await broker.joinConsumerGroup(consumerGroupName, readFromId);
-        const subscriptionHandle = await consumerGroup.subscribe(ConsumerName, newMessageHandler, checkTimeout, ayncProcessingBudget);
+        const subscriptionHandle = await consumerGroup.subscribe(ConsumerName, newMessageHandler, checkTimeout, ayncProcessingBudget, undefined, true);
         do {
             await Promise.allSettled(inProgressWork.values());
             inProgressWork.clear();
@@ -85,6 +86,8 @@ else {
 
     // Handler for arriving Payload
     async function newMessageHandler(payloads) {
+        let nextFetchMessageCount = AyncProcessingBudget;
+        let completedPayloadId = null;
         try {
             if (payloads.length <= 0) {
                 return AyncProcessingBudget;
@@ -99,16 +102,14 @@ else {
                 }
             }
 
-            let nextFetchMessageCount = -1;
-            let completedPayloadId = null;
             do {
                 try {
-                    if (inProgressWork.size > 0) {
+                    if (inProgressWork.size > AyncProcessingBudget) {
                         completedPayloadId = await Promise.race(inProgressWork.values());
                     }
                 }
                 finally {
-                    if (inProgressWork.has(completedPayloadId) === true) {
+                    if (inProgressWork.has(completedPayloadId) === true && completedPayloadId != null) {
                         inProgressWork.delete(completedPayloadId);
                     }
                     nextFetchMessageCount = AyncProcessingBudget - inProgressWork.size;
@@ -121,7 +122,7 @@ else {
             console.error(err);//TODO Include client error handler here
         }
         finally {
-            console.log(`${ConsumerName}:${inProgressWork.size}`)
+            console.log(`${ConsumerName}:${((inProgressWork.size / AyncProcessingBudget) * 100.0).toFixed(0)}% ${nextFetchMessageCount}`)
         }
     }
 
