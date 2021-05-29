@@ -1,9 +1,10 @@
 const shortid = require("shortid");
-const path = require('path');
+const Scripto = require("redis-scripto");
 
 class StreamChannelBroker {
 
-    constructor(redisClient, channelName) {
+    constructor(redisClient, channelName, scriptManager = new Scripto(redisClient)) {
+        this. _scriptManager = scriptManager;
         this._redisClient = redisClient;
         this._destroying = false;
         this._channelName = channelName;
@@ -18,6 +19,7 @@ class StreamChannelBroker {
         this._acknowledgeMessage = this._destroyingCheckWrapper(this._acknowledgeMessage.bind(this));
         this._unsubscribe = this._destroyingCheckWrapper(this._unsubscribe.bind(this), false);
         this._groupPendingSummary = this._destroyingCheckWrapper(this._groupPendingSummary.bind(this), false);
+        this._scriptManager.loadFromDir('./scripts');
     }
 
     _destroyingCheckWrapper(fn, async = true) {
@@ -149,7 +151,7 @@ class StreamChannelBroker {
         }
     }
 
-    async publish(payload, maximumApproximateMessages = 100) {
+    async publish(payload, maximumApproximateMessages = 100, failOnMaxMessageCount = false) {
         let keyValuePairs = [];
         const payloadType = typeof payload;
         switch (payloadType) {
@@ -173,6 +175,19 @@ class StreamChannelBroker {
         }
         if (maximumApproximateMessages < 0) {
             return await this._redisClient.xadd(this._channelName, '*', ...keyValuePairs);
+        }
+        else if (maximumApproximateMessages > 0 && failOnMaxMessageCount === true) {
+            return new Promise((acc, rej) => {
+                this._scriptManager.run('addWithLimit', [this._channelName], [maximumApproximateMessages, ...keyValuePairs], (err, result) => {
+                    if (err !== null) {
+                        return rej(err);
+                    }
+                    if (result == null) {
+                        return rej(new Error(`Maximum length exceeded!!, limit(${maximumApproximateMessages})`));
+                    }
+                    acc(result);
+                });
+            });
         }
         else {
             return await this._redisClient.xadd(this._channelName, 'MAXLEN', '~', maximumApproximateMessages, '*', ...keyValuePairs);

@@ -31,6 +31,7 @@
   },
   "homepage": "https://github.com/LRagji/redis-streams-broker#readme",
   "dependencies": {
+    "redis-scripto": "^0.1.3",
     "shortid": "^2.2.15"
   },
   "devDependencies": {
