@@ -4,7 +4,7 @@ const Scripto = require("redis-scripto");
 class StreamChannelBroker {
 
     constructor(redisClient, channelName, scriptManager = new Scripto(redisClient)) {
-        this. _scriptManager = scriptManager;
+        this._scriptManager = scriptManager;
         this._redisClient = redisClient;
         this._destroying = false;
         this._channelName = channelName;
@@ -48,14 +48,15 @@ class StreamChannelBroker {
                 const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "BLOCK", pollSpan, "COUNT", payloadsToFetch, "STREAMS", this._channelName, (readPending === false ? ">" : "0"));
                 if (messages !== null) {
                     let streamPayloads = this._transformResponseToMessage(messages, groupName);
-                    let nextPayloadToFetch = await handler(streamPayloads);
-                    if (nextPayloadToFetch != null && !Number.isNaN(nextPayloadToFetch) && nextPayloadToFetch != "") {
-                        payloadsToFetch = Number.parseInt(nextPayloadToFetch);
-                    }
                     if (streamPayloads.length === 0 & readPending === true) {// The server should respond back with zero and not with null response. //Look at usage example https://redis.io/commands/xreadgroup
                         //This means all pending messages are processed.
                         readPending = false;
                     }
+                    let nextPayloadToFetch = await handler(streamPayloads);
+                    if (nextPayloadToFetch != null && !Number.isNaN(nextPayloadToFetch) && nextPayloadToFetch != "") {
+                        payloadsToFetch = Number.parseInt(nextPayloadToFetch);
+                    }
+
                 }
             }
             finally {
