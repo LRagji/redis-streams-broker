@@ -208,3 +208,4 @@ class StreamChannelBroker {
 }
 
 exports.StreamChannelBroker = StreamChannelBroker;
+exports.AsyncProcessor = require('./asyncProcessor');

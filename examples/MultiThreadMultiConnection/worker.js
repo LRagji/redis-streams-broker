@@ -62,7 +62,7 @@ else {
 
     const Redis = require("ioredis");
     const brokerType = require('../../index').StreamChannelBroker;
-    const inProgressWork = new Map();
+    const AsyncProcessor = require('../../index').AsyncProcessor;
     let AyncProcessingBudget = 1;
     let ConsumerName = "";
 
@@ -70,80 +70,24 @@ else {
         ConsumerName = consumerName;
         AyncProcessingBudget = ayncProcessingBudget;
         const redisClient = new Redis(redisConnectionString);
+        const processor = new AsyncProcessor(task, AyncProcessingBudget);
         const broker = new brokerType(redisClient, qName);
         const consumerGroup = await broker.joinConsumerGroup(consumerGroupName, readFromId);
-        const subscriptionHandle = await consumerGroup.subscribe(ConsumerName, newMessageHandler, checkTimeout, ayncProcessingBudget, undefined, true);
+        const subscriptionHandle = await consumerGroup.subscribe(ConsumerName, processor.streamHandler, checkTimeout, ayncProcessingBudget, undefined, true);
         do {
-            await Promise.allSettled(inProgressWork.values());
-            inProgressWork.clear();
+            await processor.waitForAllCompletion()
             await new Promise((acc, rej) => setTimeout(acc, checkTimeout * 1));
         }
-        while (inProgressWork.size > 0)
+        while (processor.activeItems() > 0)
         consumerGroup.unsubscribe(subscriptionHandle);
         await redisClient.quit();
         return ConsumerName;
     }
 
-    // Handler for arriving Payload
-    async function newMessageHandler(payloads) {
-        let nextFetchMessageCount = AyncProcessingBudget;
-        let completedPayloadId = null;
-        try {
-            if (payloads.length <= 0) {
-                return AyncProcessingBudget;
-            }
-            for (let index = 0; index < payloads.length; index++) {
-                let payloadWithMeta = payloads[index];
-                if (payloadWithMeta.id != null && payloadWithMeta.payload == null) {
-                    await payloadWithMeta.markAsRead(false);
-                }
-                else {
-                    inProgressWork.set(payloadWithMeta.id, task(payloadWithMeta));
-                }
-            }
-
-            do {
-                try {
-                    if (inProgressWork.size > AyncProcessingBudget) {
-                        completedPayloadId = await Promise.race(inProgressWork.values());
-                    }
-                }
-                finally {
-                    if (inProgressWork.has(completedPayloadId) === true && completedPayloadId != null) {
-                        inProgressWork.delete(completedPayloadId);
-                    }
-                    nextFetchMessageCount = AyncProcessingBudget - inProgressWork.size;
-                }
-            }
-            while (nextFetchMessageCount <= 0)
-            return nextFetchMessageCount;
-        }
-        catch (err) {
-            console.error(err);//TODO Include client error handler here
-        }
-        finally {
-            console.log(`${ConsumerName}:${((inProgressWork.size / AyncProcessingBudget) * 100.0).toFixed(0)}% ${nextFetchMessageCount}`)
-        }
-    }
-
-    //Provide mark and done functionality and task interface
-    async function task(payloadWithMeta) {
-        try {
-            let taskResult = [true, true];
-
-            //TODO Code Injection here
-            await new Promise((acc, rej) => setTimeout(acc, 5000));// Fake delay simulating network or cpu load.
-
-            if (taskResult[0] === true && taskResult[1] === true) {
-                payloadWithMeta.markAsRead(true);
-            }
-            else if (taskResult[0] === true && taskResult[1] === false) {
-                payloadWithMeta.markAsRead(false);
-            }
-        }
-        finally {
-            return payloadWithMeta.id;
-        }
+    async function task(channel,id, payload) {
+        console.log(`${channel} --> ${id}:${JSON.stringify(payload)}`)
+        await new Promise((acc, rej) => setTimeout(acc, 5000));// Fake delay simulating network or cpu load.
+        return [true, true];
     }
 
     let config = JSON.parse(workerData);
