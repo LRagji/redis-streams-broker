@@ -49,7 +49,7 @@ class StreamChannelBroker {
                 if (messages !== null) {
                     let streamPayloads = this._transformResponseToMessage(messages, groupName);
                     if (streamPayloads.length === 0 & readPending === true) {// The server should respond back with zero and not with null response. //Look at usage example https://redis.io/commands/xreadgroup
-                        //This means all pending messages are processed.
+                        //This means all pending messages are processed for this consumer name.
                         readPending = false;
                     }
                     let nextPayloadToFetch = await handler(streamPayloads);
