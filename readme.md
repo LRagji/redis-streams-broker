@@ -78,7 +78,7 @@ const consumedMem = await broker.memoryFootprint();
 2. Raise a Pull Request.
 
 ## Current Version:
-0.0.10[Beta]
+0.0.12[Beta]
 
 ## License
 
