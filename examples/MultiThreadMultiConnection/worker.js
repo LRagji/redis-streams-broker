@@ -61,8 +61,8 @@ if (isMainThread) {
 else {
 
     const Redis = require("ioredis");
-    const brokerType = require('../../index').StreamChannelBroker;
-    const AsyncProcessor = require('../../index').AsyncProcessor;
+    const brokerType = require("redis-streams-broker").StreamChannelBroker;
+    const AsyncProcessor = require('redis-streams-broker').AsyncProcessor;
     let AyncProcessingBudget = 1;
     let ConsumerName = "";
 

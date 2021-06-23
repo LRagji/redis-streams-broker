@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "ioredis": "^4.27.3",
-    "piscina": "^3.1.0"
+    "piscina": "^3.1.0",
+    "redis-streams-broker": "0.0.11"
   }
 }

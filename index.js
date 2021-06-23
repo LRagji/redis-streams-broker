@@ -1,5 +1,6 @@
 const shortid = require("shortid");
 const Scripto = require("redis-scripto");
+const path = require("path");
 
 class StreamChannelBroker {
 
@@ -19,7 +20,7 @@ class StreamChannelBroker {
         this._acknowledgeMessage = this._destroyingCheckWrapper(this._acknowledgeMessage.bind(this));
         this._unsubscribe = this._destroyingCheckWrapper(this._unsubscribe.bind(this), false);
         this._groupPendingSummary = this._destroyingCheckWrapper(this._groupPendingSummary.bind(this), false);
-        this._scriptManager.loadFromDir('./scripts');
+        this._scriptManager.loadFromDir(path.join(__dirname, 'scripts'));
     }
 
     _destroyingCheckWrapper(fn, async = true) {
