@@ -104,18 +104,19 @@ class StreamChannelBroker {
         for (let responseIdx = 0; responseIdx < responses.length; responseIdx++) {
             let streamName = responses[responseIdx][0];
             for (let messageIdIdx = 0; messageIdIdx < responses[responseIdx][1].length; messageIdIdx++) {
-                let messageId = responses[responseIdx][1][messageIdIdx][0];
-                let payload = { "channel": streamName, "id": messageId, payload: {} };
+                let raw = responses[responseIdx][1][messageIdIdx];
+                let messageId = raw[0];
+                let payload = { "channel": streamName, "id": messageId, "payload": {}, "raw": raw };
                 payload["markAsRead"] = async (dropMessage) => await this._acknowledgeMessage(groupName, messageId, dropMessage);
                 payload["markAsRead"] = async (dropMessage) => await this._acknowledgeMessage(groupName, messageId, dropMessage);
-                if (responses[responseIdx][1][messageIdIdx][1] == null) {
+                if (raw[1] == null) {
                     //This happens when actual message is rolled over but its still in pending list of the consumer.
                     //Or someone deleted the message from Redis while it was still pending.
                     payload.payload = null;
                 }
                 else {
-                    for (let propertyIdx = 0; propertyIdx < responses[responseIdx][1][messageIdIdx][1].length;) {
-                        payload.payload[responses[responseIdx][1][messageIdIdx][1][propertyIdx]] = responses[responseIdx][1][messageIdIdx][1][propertyIdx + 1];
+                    for (let propertyIdx = 0; propertyIdx < raw[1].length;) {
+                        payload.payload[raw[1][propertyIdx]] = raw[1][propertyIdx + 1];
                         propertyIdx += 2;
                     }
                 }
