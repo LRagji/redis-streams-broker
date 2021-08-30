@@ -69,8 +69,8 @@ const consumedMem = await broker.memoryFootprint();
 ## Built with
 
 1. Authors :heart for Open Source.
-2. [shortid](https://www.npmjs.com/package/shortid) for auto generating subscribtion handles.
-3. [redis-scripto](https://www.npmjs.com/package/redis-scripto) for handling lua scripts.
+2. [nanoid](https://www.npmjs.com/package/nanoid#js) for auto generating subscribtion handles.
+3. [redis-scripto2](https://www.npmjs.com/package/redis-scripto2) for handling lua scripts.
 
 ## Contributions
 

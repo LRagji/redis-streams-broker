@@ -1,5 +1,5 @@
-const shortid = require("shortid");
-const Scripto = require("redis-scripto");
+const _nonSecureId = require("nanoid/non-secure").nanoid;
+const Scripto = require("redis-scripto2");
 const path = require("path");
 
 class StreamChannelBroker {
@@ -43,7 +43,7 @@ class StreamChannelBroker {
         }
     }
 
-    async _subscribe(groupName, consumerName, handler, pollSpan = 1000, payloadsToFetch = 2, subscriptionHandle = shortid.generate(), readPending = false) {
+    async _subscribe(groupName, consumerName, handler, pollSpan = 1000, payloadsToFetch = 2, subscriptionHandle = _nonSecureId(), readPending = false) {
         const intervalHandle = setTimeout(async () => {
             try {
                 const messages = await this._redisClient.xreadgroup("GROUP", groupName, consumerName, "BLOCK", pollSpan, "COUNT", payloadsToFetch, "STREAMS", this._channelName, (readPending === false ? ">" : "0"));
