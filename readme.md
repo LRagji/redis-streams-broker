@@ -78,7 +78,7 @@ const consumedMem = await broker.memoryFootprint();
 2. Raise a Pull Request.
 
 ## Current Version:
-0.0.12[Beta]
+0.0.13[Beta]
 
 ## License
 
@@ -169,4 +169,3 @@ Class `GroupSummary`
 2. `firstId: string`: Id of the first message which is pending.
 3. `lastId: string`: Id of the last message which is pending.
 4. `consumerStats: any`: Extra information provided by `XPENDING` command.
-
