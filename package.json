@@ -1,6 +1,6 @@
 {
   "name": "redis-streams-broker",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "This package is a broker to redis stream data type, This package provides guaranteed message delivery feature with acknowledgement.",
   "main": "index.js",
   "scripts": {
@@ -32,7 +32,8 @@
   "homepage": "https://github.com/LRagji/redis-streams-broker#readme",
   "dependencies": {
     "nanoid": "^3.1.25",
-    "redis-scripto2": "^0.2.2"
+    "redis-scripto2": "^0.2.2",
+    "relief-valve": "^0.0.1"
   },
   "devDependencies": {
     "ioredis": "^4.26.0",

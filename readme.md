@@ -71,6 +71,7 @@ const consumedMem = await broker.memoryFootprint();
 1. Authors :heart for Open Source.
 2. [nanoid](https://www.npmjs.com/package/nanoid#js) for auto generating subscribtion handles.
 3. [redis-scripto2](https://www.npmjs.com/package/redis-scripto2) for handling lua scripts.
+4. [relief-valve](https://www.npmjs.com/package/relief-valve) future refactoring to be open to any redis connection lib.
 
 ## Contributions
 
