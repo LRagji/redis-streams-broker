@@ -1,7 +1,7 @@
 
 export declare class StreamChannelBroker {
     constructor(redisClient: any, channelName: string);
-    publish(payload: any, maximumApproximateMessages?: number, failOnMaxMessageCount: boolean): Promise<string>;
+    publish(payload: any, maximumApproximateMessages?: number, failOnMaxMessageCount?: boolean): Promise<string>;
     destroy(): Promise<boolean>;
     joinConsumerGroup(groupName: string, readFrom: string): Promise<ConsumerGroup>;
     memoryFootprint(): Promise<number>;
