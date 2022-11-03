@@ -26,14 +26,13 @@ switch (process.env.REDISCLIENT) {
         redisClient.flushall = promisify(myFavClient.flushall).bind(myFavClient);
         break;
     default:
-        console.log("Defaulting to ioredis as redis client Enviroment: "+process.env.REDISCLIENT)
+        console.log("Defaulting to ioredis as redis client Enviroment: " + process.env.REDISCLIENT)
         const redisType = require("ioredis");
         redisClient = new redisType(localRedisConnectionString);
         break;
 }
 
 const targetType = require('../index').StreamChannelBroker;
-const { Console } = require('console');
 const channelName = "Channel1";
 const maxtimeout = 3000;
 let target = null;
