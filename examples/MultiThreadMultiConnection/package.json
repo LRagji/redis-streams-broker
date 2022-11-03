@@ -12,6 +12,6 @@
   "dependencies": {
     "ioredis": "^4.27.3",
     "piscina": "^3.1.0",
-    "redis-streams-broker": "0.0.12"
+    "redis-streams-broker": "0.0.15"
   }
 }
