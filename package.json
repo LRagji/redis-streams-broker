@@ -1,6 +1,6 @@
 {
   "name": "redis-streams-broker",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "This package is a broker to redis stream data type, This package provides guaranteed message delivery feature with acknowledgement.",
   "main": "index.js",
   "scripts": {
