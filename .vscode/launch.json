@@ -11,10 +11,9 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "pwa-node",
+            "type": "node",
             "outputCapture": "std"
         },
-
         {
             "name": "Demo IO Redis",
             "program": "${workspaceFolder}/examples/ioredis.js",
@@ -22,7 +21,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "pwa-node"
+            "type": "node"
         },
         {
             "name": "Demo Custom Injection",
@@ -31,7 +30,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "pwa-node"
+            "type": "node"
         },
         {
             "name": "Demo Multithreaded Consumer",
@@ -40,13 +39,37 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "pwa-node"
+            "type": "node"
         },
         {
             "type": "node",
             "request": "launch",
-            "name": "Component Tests",
+            "name": "Component Tests Redis Client",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "env": {
+                "REDISCLIENT": "1"
+            },
+            "args": [
+                // "-u",
+                // "tdd",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceFolder}/test/component-test.js"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Component Tests ioRedis Client",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "env": {
+                "REDISCLIENT": "1"
+            },
             "args": [
                 // "-u",
                 // "tdd",
