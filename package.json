@@ -9,7 +9,7 @@
     "redisstop": "docker stop streamz",
     "redisstart": "npm run redisstop || node -v && docker run --name streamz -p 6379:6379 -itd --rm redis:latest",
     "rediscli": "docker exec -it streamz redis-cli",
-    "push": "npm whoami && npm version patch && npm test && cd ./dist && npm publish && cd .. && git push --tags"
+    "push": "npm whoami && npm version patch && npm test && npm publish && git push --tags"
   },
   "repository": {
     "type": "git",
