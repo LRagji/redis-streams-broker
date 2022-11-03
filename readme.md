@@ -2,7 +2,7 @@
 
 This package is based on [redis stream](https://github.com/LRagji/redis-streams-broker) data type which provides you with following features 
 1. Broker to redis stream which can be used as centralized que between microservices. (Using Redis)
-2. Support for injectable redis client (be it [ioredis](https://www.npmjs.com/package/ioredis) or [redis](https://www.npmjs.com/package/redis))
+2. Support for injectable redis client [ioredis](https://www.npmjs.com/package/ioredis)only
 3. Guarantee of message delivery via consumer acknowledgements.
 4. Consumer Group functionality for scalability. (Just like Kafka)
 5. Option to drop a message when its acked, thus keeping memory footprint in check.
@@ -79,7 +79,7 @@ const consumedMem = await broker.memoryFootprint();
 2. Raise a Pull Request.
 
 ## Current Version:
-0.0.13[Beta]
+0.0.15[Beta]
 
 ## License
 
